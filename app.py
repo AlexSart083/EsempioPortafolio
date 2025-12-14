@@ -39,14 +39,18 @@ def get_portafogli_data():
             Questi portafogli sono orientati alla **stabilità** e alla **protezione del capitale**, 
             con una minore esposizione al mercato azionario. Ideali per chi ha un orizzonte 
             temporale breve-medio o bassa tolleranza al rischio.
+            
+            *Ordinati dal più semplice al più complesso da gestire.*
             """,
             "portafogli": [
                 {
-                    "nome": "Basso Rischio 1 - ETF Unico (Orizzonte 7+ anni)",
+                    "nome": "⭐ Basso Rischio 1 - ETF Unico (Orizzonte 7+ anni)",
                     "descrizione": """
+                    **Difficoltà: Minima (1 ETF)** - *Set and forget*
+                    
                     Un ETF multi-asset bilanciato che investe in azioni e obbligazioni globali. 
                     Adatto a chi cerca **massima semplicità** con un rischio contenuto e un 
-                    orizzonte temporale di almeno 7 anni.
+                    orizzonte temporale di almeno 7 anni. Non richiede ribilanciamento.
                     """,
                     "componenti": [
                         {
@@ -61,11 +65,43 @@ def get_portafogli_data():
                     ]
                 },
                 {
-                    "nome": "Basso Rischio 2 - Multi-ETF (Orizzonte 5-7 anni)",
+                    "nome": "⭐ Basso Rischio 2 - Target 2029 (Orizzonte ~3 anni)",
                     "descrizione": """
+                    **Difficoltà: Minima (2 ETF)** - *Scadenza definita, nessun ribilanciamento necessario*
+                    
+                    Portafoglio con **ETF a scadenza definita (Target Maturity 2029)**, ideale per chi 
+                    ha un orizzonte temporale preciso di circa 3 anni. Combina obbligazioni corporate 
+                    e governative con scadenza nel 2029. Gli ETF si chiuderanno automaticamente a scadenza.
+                    """,
+                    "componenti": [
+                        {
+                            "nome": "iShares iBonds Dec 2029 Term EUR Corporate UCITS ETF",
+                            "isin": "IE000IHURBR0",
+                            "ter": "0.12%",
+                            "tipo_asset": "Obbligazionario Corporate EUR (Target 2029)",
+                            "allocazione": "50%",
+                            "descrizione_breve": "Obbligazioni corporate EUR con scadenza dicembre 2029",
+                            "link_info": "https://www.justetf.com/it/etf-profile.html?isin=IE000IHURBR0"
+                        },
+                        {
+                            "nome": "Xtrackers II Target Maturity Sept 2029 Italy and Spain Government Bond UCITS ETF 1C",
+                            "isin": "LU0484969463",
+                            "ter": "0.12%",
+                            "tipo_asset": "Obbligazionario Governativo EUR (Target 2029)",
+                            "allocazione": "50%",
+                            "descrizione_breve": "Titoli di stato Italia e Spagna con scadenza settembre 2029",
+                            "link_info": "https://www.justetf.com/it/etf-profile.html?isin=LU0484969463"
+                        }
+                    ]
+                },
+                {
+                    "nome": "⭐⭐⭐ Basso Rischio 3 - Multi-ETF Diversificato (Orizzonte 5-7 anni)",
+                    "descrizione": """
+                    **Difficoltà: Media-Alta (6 ETF)** - *Richiede ribilanciamento periodico*
+                    
                     Portafoglio diversificato con **obbligazioni governative a breve e media scadenza**, 
                     una componente di oro per protezione e una quota azionaria ridotta con focus 
-                    su bassa volatilità. Ideale per orizzonti temporali di 5-7 anni.
+                    su bassa volatilità. Richiede monitoraggio e ribilanciamento annuale.
                     """,
                     "componenti": [
                         {
@@ -123,34 +159,6 @@ def get_portafogli_data():
                             "link_info": "https://www.justetf.com/it/etf-profile.html?isin=IE00B4ND3602"
                         }
                     ]
-                },
-                {
-                    "nome": "Basso Rischio 3 - Target 2029 (Orizzonte ~3 anni)",
-                    "descrizione": """
-                    Portafoglio con **ETF a scadenza definita (Target Maturity 2029)**, ideale per chi 
-                    ha un orizzonte temporale preciso di circa 3 anni. Combina obbligazioni corporate 
-                    e governative con scadenza nel 2029.
-                    """,
-                    "componenti": [
-                        {
-                            "nome": "iShares iBonds Dec 2029 Term EUR Corporate UCITS ETF",
-                            "isin": "IE000IHURBR0",
-                            "ter": "0.12%",
-                            "tipo_asset": "Obbligazionario Corporate EUR (Target 2029)",
-                            "allocazione": "50%",
-                            "descrizione_breve": "Obbligazioni corporate EUR con scadenza dicembre 2029",
-                            "link_info": "https://www.justetf.com/it/etf-profile.html?isin=IE000IHURBR0"
-                        },
-                        {
-                            "nome": "Xtrackers II Target Maturity Sept 2029 Italy and Spain Government Bond UCITS ETF 1C",
-                            "isin": "LU0484969463",
-                            "ter": "0.12%",
-                            "tipo_asset": "Obbligazionario Governativo EUR (Target 2029)",
-                            "allocazione": "50%",
-                            "descrizione_breve": "Titoli di stato Italia e Spagna con scadenza settembre 2029",
-                            "link_info": "https://www.justetf.com/it/etf-profile.html?isin=LU0484969463"
-                        }
-                    ]
                 }
             ]
         },
@@ -160,14 +168,18 @@ def get_portafogli_data():
             Questi portafogli cercano un **equilibrio tra crescita del capitale e moderazione del rischio**. 
             Adatti a chi ha un orizzonte temporale di almeno 10 anni e accetta una moderata volatilità 
             per ottenere rendimenti potenzialmente più elevati.
+            
+            *Ordinati dal più semplice al più complesso da gestire.*
             """,
             "portafogli": [
                 {
-                    "nome": "Medio Rischio 1 - ETF Unico (Orizzonte 10+ anni)",
+                    "nome": "⭐ Medio Rischio 1 - ETF Unico (Orizzonte 10+ anni)",
                     "descrizione": """
+                    **Difficoltà: Minima (1 ETF)** - *Set and forget*
+                    
                     Un ETF multi-asset con una **maggiore esposizione azionaria (60%)**, per chi cerca 
                     un buon compromesso tra semplicità e potenziale di rendimento con un orizzonte 
-                    temporale lungo.
+                    temporale lungo. Non richiede ribilanciamento.
                     """,
                     "componenti": [
                         {
@@ -182,11 +194,13 @@ def get_portafogli_data():
                     ]
                 },
                 {
-                    "nome": "Medio Rischio 2 - Multi-ETF Bilanciato (Orizzonte 10+ anni)",
+                    "nome": "⭐⭐ Medio Rischio 2 - Multi-ETF Bilanciato (Orizzonte 10+ anni)",
                     "descrizione": """
+                    **Difficoltà: Bassa (4 ETF)** - *Struttura classica, facile da gestire*
+                    
                     Portafoglio diversificato con **60% azionario globale**, obbligazioni corporate 
-                    e governative a breve termine, e oro per protezione. Equilibrio tra crescita 
-                    e stabilità.
+                    e governative a breve termine, e oro per protezione. Struttura 60/40 classica 
+                    con ribilanciamento annuale consigliato.
                     """,
                     "componenti": [
                         {
@@ -228,11 +242,13 @@ def get_portafogli_data():
                     ]
                 },
                 {
-                    "nome": "Medio Rischio 3 - Diversificato con Real Estate e Inflation-Linked (Orizzonte 10+ anni)",
+                    "nome": "⭐⭐⭐ Medio Rischio 3 - Diversificato con Real Estate e Inflation-Linked (Orizzonte 10+ anni)",
                     "descrizione": """
+                    **Difficoltà: Media-Alta (7 ETF)** - *Più complesso, molte asset class*
+                    
                     Portafoglio **altamente diversificato** con esposizione a mercati sviluppati ed emergenti, 
                     immobiliare europeo, oro, obbligazioni inflation-linked e governative a diverse scadenze. 
-                    Pensato per protezione inflazione e decorrelazione.
+                    Pensato per protezione inflazione e decorrelazione. Richiede monitoraggio attivo.
                     """,
                     "componenti": [
                         {
@@ -308,13 +324,18 @@ def get_portafogli_data():
             Questi portafogli sono orientati alla **massima crescita del capitale** nel lungo periodo, 
             accettando un'alta volatilità. Adatti a chi ha un orizzonte temporale lungo (10+ anni) 
             e alta tolleranza alle fluttuazioni di mercato.
+            
+            *Ordinati dal più semplice al più complesso da gestire.*
             """,
             "portafogli": [
                 {
-                    "nome": "Alto Rischio 1 - ETF Unico 100% Azionario Globale",
+                    "nome": "⭐ Alto Rischio 1 - ETF Unico 100% Azionario Globale",
                     "descrizione": """
+                    **Difficoltà: Minima (1 ETF)** - *Massima semplicità*
+                    
                     Un ETF **100% azionario globale** che include paesi sviluppati ed emergenti. 
                     Massima semplicità per chi cerca esposizione completa ai mercati azionari mondiali.
+                    Non richiede alcun ribilanciamento.
                     """,
                     "componenti": [
                         {
@@ -329,11 +350,58 @@ def get_portafogli_data():
                     ]
                 },
                 {
-                    "nome": "Alto Rischio 2 - Factor Investing (Value, Momentum, Quality)",
+                    "nome": "⭐⭐ Alto Rischio 2 - Azionario Bilanciato USA/Ex-USA con Bond Eurozona",
                     "descrizione": """
+                    **Difficoltà: Bassa (3 ETF)** - *Scelta attiva sul peso USA*
+                    
+                    Portafoglio **80% azionario** con bilanciamento tra mercato USA e resto del mondo 
+                    (ex-USA), più una componente obbligazionaria governativa eurozona per 
+                    stabilizzazione e diversificazione valutaria. Permette di controllare 
+                    l'esposizione al mercato americano.
+                    """,
+                    "componenti": [
+                        {
+                            "nome": "Xtrackers MSCI World ex USA UCITS ETF 1C",
+                            "isin": "IE0006WW1TQ4",
+                            "ter": "0.12%",
+                            "tipo_asset": "Azionario Globale ex-USA",
+                            "allocazione": "40%",
+                            "descrizione_breve": "Azioni paesi sviluppati escluso USA",
+                            "link_info": "https://www.justetf.com/it/etf-profile.html?isin=IE0006WW1TQ4"
+                        },
+                        {
+                            "nome": "SPDR S&P 500 UCITS ETF (Acc)",
+                            "isin": "IE000XZSV718",
+                            "ter": "0.03%",
+                            "tipo_asset": "Azionario USA Large Cap",
+                            "allocazione": "40%",
+                            "descrizione_breve": "500 maggiori aziende USA",
+                            "link_info": "https://www.justetf.com/it/etf-profile.html?isin=IE000XZSV718"
+                        },
+                        {
+                            "nome": "Vanguard EUR Eurozone Government Bond UCITS ETF Accumulating",
+                            "isin": "IE00BH04GL39",
+                            "ter": "0.07%",
+                            "tipo_asset": "Obbligazionario Governativo Eurozona",
+                            "allocazione": "20%",
+                            "descrizione_breve": "Titoli di stato eurozona tutte le scadenze",
+                            "link_info": "https://www.justetf.com/it/etf-profile.html?isin=IE00BH04GL39"
+                        }
+                    ]
+                },
+                {
+                    "nome": "⭐⭐⭐ Alto Rischio 3 - Factor Investing (Value, Momentum, Quality)",
+                    "descrizione": """
+                    **Difficoltà: Media-Alta (4 ETF)** - *Richiede comprensione dei fattori*
+                    
                     Portafoglio basato su **strategie factor investing** che combinano i fattori 
-                    Value, Momentum e Quality per cercare di sovraperformare il mercato nel lungo termine, 
-                    con una componente di oro per decorrelazione.
+                    Value, Momentum e Quality. L'obiettivo non è battere il mercato in termini di 
+                    rendimento assoluto, ma ottenere un **migliore rapporto rischio/rendimento 
+                    (Sharpe Ratio)** attraverso la diversificazione tra fattori decorrelati. 
+                    
+                    La performance attesa è in linea con il mercato globale, con potenziale per 
+                    una **minore volatilità complessiva**. Richiede comprensione delle strategie 
+                    fattoriali e ribilanciamento periodico.
                     """,
                     "componenti": [
                         {
@@ -371,43 +439,6 @@ def get_portafogli_data():
                             "allocazione": "10%",
                             "descrizione_breve": "Oro fisico per decorrelazione",
                             "link_info": "https://www.justetf.com/it/etf-profile.html?isin=JE00BN2CJ301"
-                        }
-                    ]
-                },
-                {
-                    "nome": "Alto Rischio 3 - Azionario Bilanciato USA/Ex-USA con Bond Eurozona",
-                    "descrizione": """
-                    Portafoglio **80% azionario** con bilanciamento tra mercato USA e resto del mondo 
-                    (ex-USA), più una componente obbligazionaria governativa eurozona per 
-                    stabilizzazione e diversificazione valutaria.
-                    """,
-                    "componenti": [
-                        {
-                            "nome": "Xtrackers MSCI World ex USA UCITS ETF 1C",
-                            "isin": "IE0006WW1TQ4",
-                            "ter": "0.12%",
-                            "tipo_asset": "Azionario Globale ex-USA",
-                            "allocazione": "40%",
-                            "descrizione_breve": "Azioni paesi sviluppati escluso USA",
-                            "link_info": "https://www.justetf.com/it/etf-profile.html?isin=IE0006WW1TQ4"
-                        },
-                        {
-                            "nome": "SPDR S&P 500 UCITS ETF (Acc)",
-                            "isin": "IE000XZSV718",
-                            "ter": "0.03%",
-                            "tipo_asset": "Azionario USA Large Cap",
-                            "allocazione": "40%",
-                            "descrizione_breve": "500 maggiori aziende USA",
-                            "link_info": "https://www.justetf.com/it/etf-profile.html?isin=IE000XZSV718"
-                        },
-                        {
-                            "nome": "Vanguard EUR Eurozone Government Bond UCITS ETF Accumulating",
-                            "isin": "IE00BH04GL39",
-                            "ter": "0.07%",
-                            "tipo_asset": "Obbligazionario Governativo Eurozona",
-                            "allocazione": "20%",
-                            "descrizione_breve": "Titoli di stato eurozona tutte le scadenze",
-                            "link_info": "https://www.justetf.com/it/etf-profile.html?isin=IE00BH04GL39"
                         }
                     ]
                 }
