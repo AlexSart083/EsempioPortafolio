@@ -1,775 +1,648 @@
 import streamlit as st
 import pandas as pd
+import re
+from pathlib import Path
 
 # Configurazione della pagina
 st.set_page_config(
-    page_title="Portafogli Modello - Esempi di Investimento",
+    page_title="Portafogli Modello ETF - Guida agli Investimenti",
     page_icon="📊",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
-# Titolo principale
-st.title("📊 Esplora i Nostri Portafogli Modello")
-
-# Introduzione
+# Stili CSS personalizzati
 st.markdown("""
-Benvenuto nella sezione dedicata agli **esempi di portafogli d'investimento**. 
+<style>
+    .main-header {
+        font-size: 2.5rem;
+        font-weight: bold;
+        color: #1f77b4;
+        margin-bottom: 1rem;
+    }
+    .risk-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 0.5rem;
+        font-weight: bold;
+        font-size: 0.9rem;
+        margin-right: 0.5rem;
+    }
+    .risk-low {
+        background-color: #90EE90;
+        color: #006400;
+    }
+    .risk-medium {
+        background-color: #FFD700;
+        color: #8B4500;
+    }
+    .risk-high {
+        background-color: #FFA07A;
+        color: #8B0000;
+    }
+    .info-box {
+        background-color: #f0f8ff;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        border-left: 4px solid #1f77b4;
+        margin: 1rem 0;
+    }
+    .warning-box {
+        background-color: #fff3cd;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        border-left: 4px solid #ffc107;
+        margin: 1rem 0;
+    }
+</style>
+""", unsafe_allow_html=True)
 
-Qui troverai esempi di portafogli diversificati costruiti con ETF UCITS, 
-suddivisi per profilo di rischio (Basso, Medio, Alto). Questi portafogli sono 
-pensati come **spunti didattici** per comprendere come costruire una strategia 
-d'investimento bilanciata.
 
-⚠️ **IMPORTANTE**: Queste informazioni sono fornite **a scopo puramente educativo** 
-e non costituiscono consulenza finanziaria personalizzata. Prima di investire, 
-fai sempre le tue ricerche e, se necessario, consulta un consulente finanziario 
-professionale.
-""")
-
-st.divider()
-
-# Sezione sul significato del rischio
-st.subheader("📌 Cosa Significa \"Rischio\" in Questa Guida?")
-
-st.markdown("""
-Quando parliamo di **basso, medio o alto rischio**, non ci riferiamo alla probabilità 
-di perdere denaro nel lungo periodo. Storicamente, un portafoglio diversificato 
-mantenuto per 10-15 anni o più ha ottime probabilità di generare rendimenti positivi, 
-indipendentemente dal livello di rischio scelto.
-
-Il **rischio** di cui parliamo è la **volatilità**: quanto il valore del tuo portafoglio 
-può oscillare nel breve-medio termine. Un portafoglio "ad alto rischio" può facilmente 
-perdere il 30-50% del suo valore durante una crisi di mercato, per poi recuperare negli 
-anni successivi. Un portafoglio "a basso rischio" avrà oscillazioni molto più contenute.
-
-**Perché questo è importante?** Il nemico principale dell'investitore non è il mercato, 
-ma il proprio comportamento. Le statistiche mostrano che molti investitori vendono nel 
-momento peggiore possibile — durante il massimo drawdown — trasformando una perdita 
-temporanea in una perdita permanente. Scegliere un livello di rischio adeguato alla 
-propria tolleranza psicologica significa scegliere un portafoglio che si riesce a 
-**mantenere anche nei momenti difficili**, senza farsi prendere dal panico.
-
-**In sintesi:** scegli il profilo di rischio non in base a quanto vuoi guadagnare, 
-ma in base a quanta oscillazione sei disposto a sopportare senza vendere.
-""")
-
-st.divider()
-
-# Definizione dei dati degli ETF
-def get_portafogli_data():
-    """Restituisce i dati strutturati dei portafogli modello"""
-    
-    portafogli = {
-        "basso_rischio": {
-            "titolo": "🛡️ Portafogli a Basso Rischio",
-            "descrizione": """
-            Questi portafogli sono orientati alla **stabilità** e alla **protezione del capitale**, 
-            con una minore esposizione al mercato azionario. Ideali per chi ha un orizzonte 
-            temporale breve-medio o bassa tolleranza al rischio.
-            
-            *Ordinati dal più semplice al più complesso da gestire.*
-            """,
-            "portafogli": [
-                {
-                    "nome": "⭐ Basso Rischio 1 - Vanguard LifeStrategy 40% (Orizzonte 7+ anni)",
-                    "descrizione": """
-                    **Difficoltà: Minima (1 ETF)** - *Set and forget*
-                    
-                    Un ETF multi-asset bilanciato che investe in azioni e obbligazioni globali. 
-                    Adatto a chi cerca **massima semplicità** con un rischio contenuto e un 
-                    orizzonte temporale di almeno 7 anni. Non richiede ribilanciamento.
-                    """,
-                    "componenti": [
-                        {
-                            "nome": "Vanguard LifeStrategy 40% Equity UCITS ETF Accumulating",
-                            "isin": "IE00BMVB5M21",
-                            "ter": "0.25%",
-                            "tipo_asset": "Multi-Asset Bilanciato",
-                            "allocazione": "100%",
-                            "descrizione_breve": "Investimento globale con 40% azioni e 60% obbligazioni",
-                            "link_info": "https://www.justetf.com/it/etf-profile.html?isin=IE00BMVB5M21"
-                        }
-                    ]
-                },
-                {
-                    "nome": "⭐ Basso Rischio 2 - iShares Conservative Portfolio (Orizzonte 5+ anni)",
-                    "descrizione": """
-                    **Difficoltà: Minima (1 ETF)** - *Set and forget*
-                    
-                    ETF multi-asset **conservativo** di iShares che offre un'allocazione prudente 
-                    con prevalenza obbligazionaria. Alternativa al LifeStrategy per chi preferisce 
-                    la gamma iShares. Non richiede ribilanciamento.
-                    """,
-                    "componenti": [
-                        {
-                            "nome": "iShares Conservative Portfolio UCITS ETF EUR (Acc)",
-                            "isin": "IE00BLP53M98",
-                            "ter": "0.25%",
-                            "tipo_asset": "Multi-Asset Conservativo",
-                            "allocazione": "100%",
-                            "descrizione_breve": "Portafoglio multi-asset conservativo con prevalenza obbligazionaria",
-                            "link_info": "https://www.justetf.com/it/etf-profile.html?isin=IE00BLP53M98"
-                        }
-                    ]
-                },
-                {
-                    "nome": "⭐ Basso Rischio 3 - Target 2029 (Orizzonte ~3 anni)",
-                    "descrizione": """
-                    **Difficoltà: Minima (2 ETF)** - *Scadenza definita, nessun ribilanciamento necessario*
-                    
-                    Portafoglio con **ETF a scadenza definita (Target Maturity 2029)**, ideale per chi 
-                    ha un orizzonte temporale preciso di circa 3 anni. Combina obbligazioni corporate 
-                    e governative con scadenza nel 2029. Gli ETF si chiuderanno automaticamente a scadenza.
-                    """,
-                    "componenti": [
-                        {
-                            "nome": "iShares iBonds Dec 2029 Term EUR Corporate UCITS ETF",
-                            "isin": "IE000IHURBR0",
-                            "ter": "0.12%",
-                            "tipo_asset": "Obbligazionario Corporate EUR (Target 2029)",
-                            "allocazione": "50%",
-                            "descrizione_breve": "Obbligazioni corporate EUR con scadenza dicembre 2029",
-                            "link_info": "https://www.justetf.com/it/etf-profile.html?isin=IE000IHURBR0"
-                        },
-                        {
-                            "nome": "Xtrackers II Target Maturity Sept 2029 Italy and Spain Government Bond UCITS ETF 1C",
-                            "isin": "LU0484969463",
-                            "ter": "0.12%",
-                            "tipo_asset": "Obbligazionario Governativo EUR (Target 2029)",
-                            "allocazione": "50%",
-                            "descrizione_breve": "Titoli di stato Italia e Spagna con scadenza settembre 2029",
-                            "link_info": "https://www.justetf.com/it/etf-profile.html?isin=LU0484969463"
-                        }
-                    ]
-                },
-                {
-                    "nome": "⭐⭐ Basso Rischio 4 - Quality + Min Vol con Bond (Orizzonte 5-7 anni)",
-                    "descrizione": """
-                    **Difficoltà: Bassa (3 ETF)** - *Ribilanciamento annuale consigliato*
-                    
-                    Portafoglio con **60% obbligazioni governative eurozona** e 40% azionario 
-                    difensivo basato sui fattori Quality e Minimum Volatility. Approccio conservativo 
-                    all'azionario con focus su aziende di qualità e bassa volatilità.
-                    """,
-                    "componenti": [
-                        {
-                            "nome": "Vanguard EUR Eurozone Government Bond UCITS ETF Accumulating",
-                            "isin": "IE00BH04GL39",
-                            "ter": "0.07%",
-                            "tipo_asset": "Obbligazionario Governativo Eurozona",
-                            "allocazione": "60%",
-                            "descrizione_breve": "Titoli di stato eurozona tutte le scadenze",
-                            "link_info": "https://www.justetf.com/it/etf-profile.html?isin=IE00BH04GL39"
-                        },
-                        {
-                            "nome": "Xtrackers MSCI World Quality UCITS ETF 1C",
-                            "isin": "IE00BL25JL35",
-                            "ter": "0.25%",
-                            "tipo_asset": "Azionario Globale Factor Quality",
-                            "allocazione": "30%",
-                            "descrizione_breve": "Azioni globali selezionate per fattore Quality",
-                            "link_info": "https://www.justetf.com/it/etf-profile.html?isin=IE00BL25JL35"
-                        },
-                        {
-                            "nome": "iShares Edge MSCI World Minimum Volatility UCITS ETF USD (Acc)",
-                            "isin": "IE00B8FHGS14",
-                            "ter": "0.30%",
-                            "tipo_asset": "Azionario Globale Min. Volatilità",
-                            "allocazione": "10%",
-                            "descrizione_breve": "Azioni globali a bassa volatilità",
-                            "link_info": "https://www.justetf.com/it/etf-profile.html?isin=IE00B8FHGS14"
-                        }
-                    ]
-                },
-                {
-                    "nome": "⭐⭐⭐ Basso Rischio 5 - Multi-ETF Diversificato (Orizzonte 5-7 anni)",
-                    "descrizione": """
-                    **Difficoltà: Media-Alta (6 ETF)** - *Richiede ribilanciamento periodico*
-                    
-                    Portafoglio diversificato con **obbligazioni governative a breve e media scadenza**, 
-                    una componente di oro per protezione e una quota azionaria ridotta con focus 
-                    su bassa volatilità. Richiede monitoraggio e ribilanciamento annuale.
-                    """,
-                    "componenti": [
-                        {
-                            "nome": "SPDR Bloomberg 1-3 Year Euro Government Bond UCITS ETF",
-                            "isin": "IE00B6YX5F63",
-                            "ter": "0.15%",
-                            "tipo_asset": "Obbligazionario Governativo EUR (1-3 anni)",
-                            "allocazione": "30%",
-                            "descrizione_breve": "Titoli di stato eurozona a breve scadenza",
-                            "link_info": "https://www.justetf.com/it/etf-profile.html?isin=IE00B6YX5F63"
-                        },
-                        {
-                            "nome": "Amundi Euro Government Bond 3-5Y UCITS ETF",
-                            "isin": "LU1650488494",
-                            "ter": "0.15%",
-                            "tipo_asset": "Obbligazionario Governativo EUR (3-5 anni)",
-                            "allocazione": "20%",
-                            "descrizione_breve": "Titoli di stato eurozona a media scadenza",
-                            "link_info": "https://www.justetf.com/it/etf-profile.html?isin=LU1650488494"
-                        },
-                        {
-                            "nome": "iShares EUR Government Bond 0-1yr UCITS ETF",
-                            "isin": "IE00B3FH7618",
-                            "ter": "0.07%",
-                            "tipo_asset": "Obbligazionario Governativo EUR (0-1 anno)",
-                            "allocazione": "15%",
-                            "descrizione_breve": "Titoli di stato eurozona a brevissima scadenza",
-                            "link_info": "https://www.justetf.com/it/etf-profile.html?isin=IE00B3FH7618"
-                        },
-                        {
-                            "nome": "Xtrackers MSCI World UCITS ETF 1C",
-                            "isin": "IE00BJ0KDQ92",
-                            "ter": "0.12%",
-                            "tipo_asset": "Azionario Globale",
-                            "allocazione": "15%",
-                            "descrizione_breve": "Azioni globali paesi sviluppati",
-                            "link_info": "https://www.justetf.com/it/etf-profile.html?isin=IE00BJ0KDQ92"
-                        },
-                        {
-                            "nome": "iShares Edge MSCI World Minimum Volatility UCITS ETF USD (Acc)",
-                            "isin": "IE00B8FHGS14",
-                            "ter": "0.30%",
-                            "tipo_asset": "Azionario Globale Min. Volatilità",
-                            "allocazione": "10%",
-                            "descrizione_breve": "Azioni globali a bassa volatilità",
-                            "link_info": "https://www.justetf.com/it/etf-profile.html?isin=IE00B8FHGS14"
-                        },
-                        {
-                            "nome": "iShares Physical Gold ETC",
-                            "isin": "IE00B4ND3602",
-                            "ter": "0.12%",
-                            "tipo_asset": "Oro Fisico",
-                            "allocazione": "10%",
-                            "descrizione_breve": "Oro fisico per protezione e diversificazione",
-                            "link_info": "https://www.justetf.com/it/etf-profile.html?isin=IE00B4ND3602"
-                        }
-                    ]
-                }
-            ]
-        },
-        "medio_rischio": {
-            "titolo": "⚖️ Portafogli a Medio Rischio",
-            "descrizione": """
-            Questi portafogli cercano un **equilibrio tra crescita del capitale e moderazione del rischio**. 
-            Adatti a chi ha un orizzonte temporale di almeno 10 anni e accetta una moderata volatilità 
-            per ottenere rendimenti potenzialmente più elevati.
-            
-            *Ordinati dal più semplice al più complesso da gestire.*
-            """,
-            "portafogli": [
-                {
-                    "nome": "⭐ Medio Rischio 1 - Vanguard LifeStrategy 60% (Orizzonte 10+ anni)",
-                    "descrizione": """
-                    **Difficoltà: Minima (1 ETF)** - *Set and forget*
-                    
-                    Un ETF multi-asset con una **maggiore esposizione azionaria (60%)**, per chi cerca 
-                    un buon compromesso tra semplicità e potenziale di rendimento con un orizzonte 
-                    temporale lungo. Non richiede ribilanciamento.
-                    """,
-                    "componenti": [
-                        {
-                            "nome": "Vanguard LifeStrategy 60% Equity UCITS ETF Accumulating",
-                            "isin": "IE00BMVB5P51",
-                            "ter": "0.25%",
-                            "tipo_asset": "Multi-Asset Bilanciato",
-                            "allocazione": "100%",
-                            "descrizione_breve": "Investimento globale con 60% azioni e 40% obbligazioni",
-                            "link_info": "https://www.justetf.com/it/etf-profile.html?isin=IE00BMVB5P51"
-                        }
-                    ]
-                },
-                {
-                    "nome": "⭐ Medio Rischio 2 - iShares Moderate Portfolio (Orizzonte 7+ anni)",
-                    "descrizione": """
-                    **Difficoltà: Minima (1 ETF)** - *Set and forget*
-                    
-                    ETF multi-asset **moderato** di iShares che offre un'allocazione bilanciata 
-                    tra azioni e obbligazioni. Alternativa al LifeStrategy per chi preferisce 
-                    la gamma iShares. Non richiede ribilanciamento.
-                    """,
-                    "componenti": [
-                        {
-                            "nome": "iShares Moderate Portfolio UCITS ETF EUR (Acc)",
-                            "isin": "IE00BLLZQS08",
-                            "ter": "0.25%",
-                            "tipo_asset": "Multi-Asset Moderato",
-                            "allocazione": "100%",
-                            "descrizione_breve": "Portafoglio multi-asset moderato con allocazione bilanciata",
-                            "link_info": "https://www.justetf.com/it/etf-profile.html?isin=IE00BLLZQS08"
-                        }
-                    ]
-                },
-                {
-                    "nome": "⭐⭐ Medio Rischio 3 - Multi-ETF Bilanciato (Orizzonte 10+ anni)",
-                    "descrizione": """
-                    **Difficoltà: Bassa (4 ETF)** - *Struttura classica, facile da gestire*
-                    
-                    Portafoglio diversificato con **60% azionario globale**, obbligazioni corporate 
-                    e governative a breve termine, e oro per protezione. Struttura 60/40 classica 
-                    con ribilanciamento annuale consigliato.
-                    """,
-                    "componenti": [
-                        {
-                            "nome": "Amundi Prime All Country World UCITS ETF Acc",
-                            "isin": "IE0003XJA0J9",
-                            "ter": "0.07%",
-                            "tipo_asset": "Azionario Globale (Sviluppati + Emergenti)",
-                            "allocazione": "60%",
-                            "descrizione_breve": "Azioni globali paesi sviluppati ed emergenti",
-                            "link_info": "https://www.justetf.com/it/etf-profile.html?isin=IE0003XJA0J9"
-                        },
-                        {
-                            "nome": "Vanguard EUR Corporate Bond UCITS ETF Accumulating",
-                            "isin": "IE00BGYWT403",
-                            "ter": "0.07%",
-                            "tipo_asset": "Obbligazionario Corporate EUR",
-                            "allocazione": "15%",
-                            "descrizione_breve": "Obbligazioni corporate investment grade in euro",
-                            "link_info": "https://www.justetf.com/it/etf-profile.html?isin=IE00BGYWT403"
-                        },
-                        {
-                            "nome": "iShares Euro Government Bond 1-3yr UCITS ETF (Acc)",
-                            "isin": "IE00B3VTMJ91",
-                            "ter": "0.15%",
-                            "tipo_asset": "Obbligazionario Governativo EUR (1-3 anni)",
-                            "allocazione": "15%",
-                            "descrizione_breve": "Titoli di stato eurozona a breve scadenza",
-                            "link_info": "https://www.justetf.com/it/etf-profile.html?isin=IE00B3VTMJ91"
-                        },
-                        {
-                            "nome": "iShares Physical Gold ETC",
-                            "isin": "IE00B4ND3602",
-                            "ter": "0.12%",
-                            "tipo_asset": "Oro Fisico",
-                            "allocazione": "10%",
-                            "descrizione_breve": "Oro fisico per protezione e diversificazione",
-                            "link_info": "https://www.justetf.com/it/etf-profile.html?isin=IE00B4ND3602"
-                        }
-                    ]
-                },
-                {
-                    "nome": "⭐⭐ Medio Rischio 4 - Multifactor + Developed World (Orizzonte 10+ anni)",
-                    "descrizione": """
-                    **Difficoltà: Bassa (4 ETF)** - *Ribilanciamento annuale consigliato*
-                    
-                    Portafoglio **60% azionario** che combina un ETF World tradizionale con un ETF 
-                    **Multifactor** (che integra più fattori: Value, Momentum, Quality, Size). 
-                    Oro per decorrelazione e obbligazioni governative eurozona per stabilità.
-                    """,
-                    "componenti": [
-                        {
-                            "nome": "Vanguard FTSE Developed World UCITS ETF Acc",
-                            "isin": "IE00BK5BQV03",
-                            "ter": "0.12%",
-                            "tipo_asset": "Azionario Globale Paesi Sviluppati",
-                            "allocazione": "40%",
-                            "descrizione_breve": "Azioni globali paesi sviluppati",
-                            "link_info": "https://www.justetf.com/it/etf-profile.html?isin=IE00BK5BQV03"
-                        },
-                        {
-                            "nome": "iShares STOXX World Equity Multifactor UCITS ETF USD (Acc)",
-                            "isin": "IE00BZ0PKT83",
-                            "ter": "0.30%",
-                            "tipo_asset": "Azionario Globale Multifactor",
-                            "allocazione": "20%",
-                            "descrizione_breve": "Azioni globali selezionate con approccio multi-fattoriale",
-                            "link_info": "https://www.justetf.com/it/etf-profile.html?isin=IE00BZ0PKT83"
-                        },
-                        {
-                            "nome": "Vanguard EUR Eurozone Government Bond UCITS ETF Accumulating",
-                            "isin": "IE00BH04GL39",
-                            "ter": "0.07%",
-                            "tipo_asset": "Obbligazionario Governativo Eurozona",
-                            "allocazione": "30%",
-                            "descrizione_breve": "Titoli di stato eurozona tutte le scadenze",
-                            "link_info": "https://www.justetf.com/it/etf-profile.html?isin=IE00BH04GL39"
-                        },
-                        {
-                            "nome": "iShares Physical Gold ETC",
-                            "isin": "IE00B4ND3602",
-                            "ter": "0.12%",
-                            "tipo_asset": "Oro Fisico",
-                            "allocazione": "10%",
-                            "descrizione_breve": "Oro fisico per protezione e diversificazione",
-                            "link_info": "https://www.justetf.com/it/etf-profile.html?isin=IE00B4ND3602"
-                        }
-                    ]
-                },
-                {
-                    "nome": "⭐⭐⭐ Medio Rischio 5 - Diversificato con Real Estate e Inflation-Linked (Orizzonte 10+ anni)",
-                    "descrizione": """
-                    **Difficoltà: Media-Alta (7 ETF)** - *Più complesso, molte asset class*
-                    
-                    Portafoglio **altamente diversificato** con esposizione a mercati sviluppati ed emergenti, 
-                    immobiliare europeo, oro, obbligazioni inflation-linked e governative a diverse scadenze. 
-                    Pensato per protezione inflazione e decorrelazione. Richiede monitoraggio attivo.
-                    """,
-                    "componenti": [
-                        {
-                            "nome": "UBS Core MSCI World UCITS ETF USD acc",
-                            "isin": "IE00BD4TXV59",
-                            "ter": "0.06%",
-                            "tipo_asset": "Azionario Globale Paesi Sviluppati",
-                            "allocazione": "50%",
-                            "descrizione_breve": "Azioni globali paesi sviluppati (replica ottimizzata)",
-                            "link_info": "https://www.justetf.com/it/etf-profile.html?isin=IE00BD4TXV59"
-                        },
-                        {
-                            "nome": "iShares Core MSCI Emerging Markets IMI UCITS ETF (Acc)",
-                            "isin": "IE00BKM4GZ66",
-                            "ter": "0.18%",
-                            "tipo_asset": "Azionario Mercati Emergenti",
-                            "allocazione": "5%",
-                            "descrizione_breve": "Azioni mercati emergenti (large, mid e small cap)",
-                            "link_info": "https://www.justetf.com/it/etf-profile.html?isin=IE00BKM4GZ66"
-                        },
-                        {
-                            "nome": "Xtrackers FTSE EPRA/NAREIT Developed Europe Real Estate UCITS ETF 1C",
-                            "isin": "LU0489337690",
-                            "ter": "0.33%",
-                            "tipo_asset": "Immobiliare Europa",
-                            "allocazione": "5%",
-                            "descrizione_breve": "REIT e società immobiliari europee",
-                            "link_info": "https://www.justetf.com/it/etf-profile.html?isin=LU0489337690"
-                        },
-                        {
-                            "nome": "Invesco Physical Gold A",
-                            "isin": "IE00B579F325",
-                            "ter": "0.12%",
-                            "tipo_asset": "Oro Fisico",
-                            "allocazione": "10%",
-                            "descrizione_breve": "Oro fisico per protezione",
-                            "link_info": "https://www.justetf.com/it/etf-profile.html?isin=IE00B579F325"
-                        },
-                        {
-                            "nome": "iShares Euro Inflation Linked Government Bond UCITS ETF",
-                            "isin": "IE00B0M62X26",
-                            "ter": "0.09%",
-                            "tipo_asset": "Obbligazionario Inflation-Linked EUR",
-                            "allocazione": "10%",
-                            "descrizione_breve": "Obbligazioni governative eurozona indicizzate all'inflazione",
-                            "link_info": "https://www.justetf.com/it/etf-profile.html?isin=IE00B0M62X26"
-                        },
-                        {
-                            "nome": "SPDR Bloomberg 1-3 Year Euro Government Bond UCITS ETF",
-                            "isin": "IE00B6YX5F63",
-                            "ter": "0.15%",
-                            "tipo_asset": "Obbligazionario Governativo EUR (1-3 anni)",
-                            "allocazione": "10%",
-                            "descrizione_breve": "Titoli di stato eurozona a breve scadenza",
-                            "link_info": "https://www.justetf.com/it/etf-profile.html?isin=IE00B6YX5F63"
-                        },
-                        {
-                            "nome": "Amundi Euro Government Bond 10-15Y UCITS ETF Acc",
-                            "isin": "LU1650489385",
-                            "ter": "0.15%",
-                            "tipo_asset": "Obbligazionario Governativo EUR (10-15 anni)",
-                            "allocazione": "10%",
-                            "descrizione_breve": "Titoli di stato eurozona a lunga scadenza",
-                            "link_info": "https://www.justetf.com/it/etf-profile.html?isin=LU1650489385"
-                        }
-                    ]
-                }
-            ]
-        },
-        "alto_rischio": {
-            "titolo": "🚀 Portafogli ad Alto Rischio",
-            "descrizione": """
-            Questi portafogli sono orientati alla **massima crescita del capitale** nel lungo periodo, 
-            accettando un'alta volatilità. Adatti a chi ha un orizzonte temporale lungo (10+ anni) 
-            e alta tolleranza alle fluttuazioni di mercato.
-            
-            *Ordinati dal più semplice al più complesso da gestire.*
-            """,
-            "portafogli": [
-                {
-                    "nome": "⭐ Alto Rischio 1 - SPDR ACWI 100% Azionario Globale",
-                    "descrizione": """
-                    **Difficoltà: Minima (1 ETF)** - *Massima semplicità*
-                    
-                    Un ETF **100% azionario globale** che include paesi sviluppati ed emergenti. 
-                    Massima semplicità per chi cerca esposizione completa ai mercati azionari mondiali.
-                    Non richiede alcun ribilanciamento.
-                    """,
-                    "componenti": [
-                        {
-                            "nome": "SPDR MSCI All Country World UCITS ETF (Acc)",
-                            "isin": "IE00B44Z5B48",
-                            "ter": "0.12%",
-                            "tipo_asset": "Azionario Globale (Sviluppati + Emergenti)",
-                            "allocazione": "100%",
-                            "descrizione_breve": "Azioni globali paesi sviluppati ed emergenti",
-                            "link_info": "https://www.justetf.com/it/etf-profile.html?isin=IE00B44Z5B48"
-                        }
-                    ]
-                },
-                {
-                    "nome": "⭐ Alto Rischio 2 - Vanguard LifeStrategy 80% (Orizzonte 10+ anni)",
-                    "descrizione": """
-                    **Difficoltà: Minima (1 ETF)** - *Set and forget*
-                    
-                    Un ETF multi-asset con **80% esposizione azionaria** e 20% obbligazionaria. 
-                    Offre un profilo di rischio elevato ma con una piccola componente stabilizzatrice.
-                    Non richiede ribilanciamento.
-                    """,
-                    "componenti": [
-                        {
-                            "nome": "Vanguard LifeStrategy 80% Equity UCITS ETF (EUR) Accumulating",
-                            "isin": "IE00BMVB5R75",
-                            "ter": "0.25%",
-                            "tipo_asset": "Multi-Asset Aggressivo",
-                            "allocazione": "100%",
-                            "descrizione_breve": "Investimento globale con 80% azioni e 20% obbligazioni",
-                            "link_info": "https://www.justetf.com/it/etf-profile.html?isin=IE00BMVB5R75"
-                        }
-                    ]
-                },
-                {
-                    "nome": "⭐⭐ Alto Rischio 3 - Azionario Bilanciato USA/Ex-USA con Bond Eurozona",
-                    "descrizione": """
-                    **Difficoltà: Bassa (3 ETF)** - *Scelta attiva sul peso USA*
-                    
-                    Portafoglio **80% azionario** con bilanciamento tra mercato USA e resto del mondo 
-                    (ex-USA), più una componente obbligazionaria governativa eurozona per 
-                    stabilizzazione e diversificazione valutaria. Permette di controllare 
-                    l'esposizione al mercato americano.
-                    """,
-                    "componenti": [
-                        {
-                            "nome": "Xtrackers MSCI World ex USA UCITS ETF 1C",
-                            "isin": "IE0006WW1TQ4",
-                            "ter": "0.12%",
-                            "tipo_asset": "Azionario Globale ex-USA",
-                            "allocazione": "40%",
-                            "descrizione_breve": "Azioni paesi sviluppati escluso USA",
-                            "link_info": "https://www.justetf.com/it/etf-profile.html?isin=IE0006WW1TQ4"
-                        },
-                        {
-                            "nome": "SPDR S&P 500 UCITS ETF (Acc)",
-                            "isin": "IE000XZSV718",
-                            "ter": "0.03%",
-                            "tipo_asset": "Azionario USA Large Cap",
-                            "allocazione": "40%",
-                            "descrizione_breve": "500 maggiori aziende USA",
-                            "link_info": "https://www.justetf.com/it/etf-profile.html?isin=IE000XZSV718"
-                        },
-                        {
-                            "nome": "Vanguard EUR Eurozone Government Bond UCITS ETF Accumulating",
-                            "isin": "IE00BH04GL39",
-                            "ter": "0.07%",
-                            "tipo_asset": "Obbligazionario Governativo Eurozona",
-                            "allocazione": "20%",
-                            "descrizione_breve": "Titoli di stato eurozona tutte le scadenze",
-                            "link_info": "https://www.justetf.com/it/etf-profile.html?isin=IE00BH04GL39"
-                        }
-                    ]
-                },
-                {
-                    "nome": "⭐⭐ Alto Rischio 4 - All-World con Small Cap Tilt",
-                    "descrizione": """
-                    **Difficoltà: Bassa (3 ETF)** - *Ribilanciamento annuale consigliato*
-                    
-                    Portafoglio **100% azionario** con esposizione globale e un **tilt verso le 
-                    small cap** sia dei paesi sviluppati che emergenti. Le small cap storicamente 
-                    offrono un premio di rendimento nel lungo periodo a fronte di maggiore volatilità.
-                    """,
-                    "componenti": [
-                        {
-                            "nome": "Vanguard FTSE All-World UCITS ETF (USD) Accumulating",
-                            "isin": "IE00BK5BQT80",
-                            "ter": "0.22%",
-                            "tipo_asset": "Azionario Globale (Sviluppati + Emergenti)",
-                            "allocazione": "85%",
-                            "descrizione_breve": "Azioni globali large e mid cap",
-                            "link_info": "https://www.justetf.com/it/etf-profile.html?isin=IE00BK5BQT80"
-                        },
-                        {
-                            "nome": "iShares MSCI World Small Cap UCITS ETF",
-                            "isin": "IE00BF4RFH31",
-                            "ter": "0.35%",
-                            "tipo_asset": "Azionario Globale Small Cap",
-                            "allocazione": "10%",
-                            "descrizione_breve": "Azioni small cap paesi sviluppati",
-                            "link_info": "https://www.justetf.com/it/etf-profile.html?isin=IE00BF4RFH31"
-                        },
-                        {
-                            "nome": "SPDR MSCI Emerging Markets Small Cap UCITS ETF",
-                            "isin": "IE00B48X4842",
-                            "ter": "0.55%",
-                            "tipo_asset": "Azionario Emergenti Small Cap",
-                            "allocazione": "5%",
-                            "descrizione_breve": "Azioni small cap mercati emergenti",
-                            "link_info": "https://www.justetf.com/it/etf-profile.html?isin=IE00B48X4842"
-                        }
-                    ]
-                },
-                {
-                    "nome": "⭐⭐⭐ Alto Rischio 5 - Factor Investing (Value, Momentum, Quality)",
-                    "descrizione": """
-                    **Difficoltà: Media-Alta (4 ETF)** - *Richiede comprensione dei fattori*
-                    
-                    Portafoglio basato su **strategie factor investing** che combinano i fattori 
-                    Value, Momentum e Quality. L'obiettivo non è battere il mercato in termini di 
-                    rendimento assoluto, ma ottenere un **migliore rapporto rischio/rendimento 
-                    (Sharpe Ratio)** attraverso la diversificazione tra fattori decorrelati. 
-                    
-                    La performance attesa è in linea con il mercato globale, con potenziale per 
-                    una **minore volatilità complessiva**. Richiede comprensione delle strategie 
-                    fattoriali e ribilanciamento periodico.
-                    """,
-                    "componenti": [
-                        {
-                            "nome": "iShares Edge MSCI World Value Factor UCITS ETF",
-                            "isin": "IE00BP3QZB59",
-                            "ter": "0.25%",
-                            "tipo_asset": "Azionario Globale Factor Value",
-                            "allocazione": "30%",
-                            "descrizione_breve": "Azioni globali selezionate per fattore Value",
-                            "link_info": "https://www.justetf.com/it/etf-profile.html?isin=IE00BP3QZB59"
-                        },
-                        {
-                            "nome": "Xtrackers MSCI World Momentum UCITS ETF 1C",
-                            "isin": "IE00BL25JP72",
-                            "ter": "0.25%",
-                            "tipo_asset": "Azionario Globale Factor Momentum",
-                            "allocazione": "30%",
-                            "descrizione_breve": "Azioni globali selezionate per fattore Momentum",
-                            "link_info": "https://www.justetf.com/it/etf-profile.html?isin=IE00BL25JP72"
-                        },
-                        {
-                            "nome": "Xtrackers MSCI World Quality UCITS ETF 1C",
-                            "isin": "IE00BL25JL35",
-                            "ter": "0.25%",
-                            "tipo_asset": "Azionario Globale Factor Quality",
-                            "allocazione": "30%",
-                            "descrizione_breve": "Azioni globali selezionate per fattore Quality",
-                            "link_info": "https://www.justetf.com/it/etf-profile.html?isin=IE00BL25JL35"
-                        },
-                        {
-                            "nome": "WisdomTree Core Physical Gold",
-                            "isin": "JE00BN2CJ301",
-                            "ter": "0.12%",
-                            "tipo_asset": "Oro Fisico",
-                            "allocazione": "10%",
-                            "descrizione_breve": "Oro fisico per decorrelazione",
-                            "link_info": "https://www.justetf.com/it/etf-profile.html?isin=JE00BN2CJ301"
-                        }
-                    ]
-                }
-            ]
-        }
+def parse_portfolio_data(file_path='/mnt/project/AzionarioPort.txt'):
+    """
+    Parserizza il file AzionarioPort.txt e restituisce una struttura dati organizzata
+    """
+    portfolios = {
+        'multi': [],
+        'single': [],
+        'esg': []
     }
     
-    return portafogli
+    current_section = None
+    current_portfolio = None
+    
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+        
+        for line in lines:
+            line = line.strip()
+            
+            # Salta righe vuote
+            if not line:
+                continue
+            
+            # Identifica le sezioni
+            if 'Multi Portfolios' in line:
+                current_section = 'multi'
+                continue
+            elif line == 'Single':
+                current_section = 'single'
+                continue
+            elif line == 'ESG':
+                current_section = 'esg'
+                continue
+            
+            # Identifica un nuovo portafoglio
+            if line.startswith('PORT'):
+                # Salva il portafoglio precedente se esiste
+                if current_portfolio:
+                    portfolios[current_section].append(current_portfolio)
+                
+                # Estrai informazioni del portafoglio
+                port_match = re.match(r'(PORT\w+)\s*-?\s*Risk\s*(\d+),?\s*ESG\s*(\d+),?\s*MinDurY\s*([\d.]+[^\s]*)\s*(?:Rebalance\s*(.+))?', line)
+                
+                if port_match:
+                    port_id = port_match.group(1)
+                    risk_level = int(port_match.group(2))
+                    esg = int(port_match.group(3))
+                    min_duration = port_match.group(4)
+                    rebalance = port_match.group(5) if port_match.group(5) else 'N/A'
+                    
+                    current_portfolio = {
+                        'id': port_id,
+                        'risk_level': risk_level,
+                        'esg': esg,
+                        'min_duration': min_duration,
+                        'rebalance': rebalance,
+                        'components': [],
+                        'note': ''
+                    }
+            
+            # Identifica componenti del portafoglio
+            elif current_portfolio is not None:
+                # Controlla se è una nota
+                if line.startswith('('):
+                    current_portfolio['note'] = line
+                    continue
+                
+                # Prova a parsare come componente ETF
+                # Formato: percentuale% Nome ETF ISIN TER
+                component_match = re.match(r'(\d+)%\s+(.+?)\s+([A-Z]{2}\d+[A-Z0-9]+)\s+([\d,]+)', line)
+                
+                if component_match:
+                    percentage = component_match.group(1)
+                    etf_name = component_match.group(2).strip()
+                    isin = component_match.group(3)
+                    ter = component_match.group(4).replace(',', '.')
+                    
+                    current_portfolio['components'].append({
+                        'percentage': percentage,
+                        'name': etf_name,
+                        'isin': isin,
+                        'ter': ter
+                    })
+                
+                # Caso speciale per portafogli single senza percentuale
+                elif not component_match and current_section in ['single', 'esg']:
+                    single_match = re.match(r'(.+?)\s+([A-Z]{2}\d+[A-Z0-9]+)\s+([\d,]+)', line)
+                    if single_match:
+                        etf_name = single_match.group(1).strip()
+                        isin = single_match.group(2)
+                        ter = single_match.group(3).replace(',', '.')
+                        
+                        current_portfolio['components'].append({
+                            'percentage': '100',
+                            'name': etf_name,
+                            'isin': isin,
+                            'ter': ter
+                        })
+                    else:
+                        # Formato alternato: Nome TER ISIN
+                        alt_match = re.match(r'(.+?)\s+([\d,]+)\s+([A-Z]{2}\d+[A-Z0-9]+)', line)
+                        if alt_match:
+                            etf_name = alt_match.group(1).strip()
+                            ter = alt_match.group(2).replace(',', '.')
+                            isin = alt_match.group(3)
+                            
+                            current_portfolio['components'].append({
+                                'percentage': '100',
+                                'name': etf_name,
+                                'isin': isin,
+                                'ter': ter
+                            })
+        
+        # Aggiungi l'ultimo portafoglio
+        if current_portfolio:
+            portfolios[current_section].append(current_portfolio)
+        
+    except Exception as e:
+        st.error(f"Errore nel parsing del file: {str(e)}")
+    
+    return portfolios
 
 
-def mostra_portafoglio(portafoglio):
-    """Visualizza i dettagli di un singolo portafoglio"""
-    
-    st.markdown(f"**Descrizione:** {portafoglio['descrizione']}")
-    
-    # Crea DataFrame con i componenti
-    componenti_data = []
-    for comp in portafoglio['componenti']:
-        componenti_data.append({
-            "Nome ETF": comp['nome'],
-            "ISIN": comp['isin'],
-            "TER": comp['ter'],
-            "Tipo Asset": comp['tipo_asset'],
-            "Allocazione": comp['allocazione'],
-            "Descrizione": comp['descrizione_breve']
-        })
-    
-    df = pd.DataFrame(componenti_data)
-    
-    # Mostra la tabella
-    st.dataframe(df, use_container_width=True, hide_index=True)
-    
-    # Link per maggiori informazioni
-    st.markdown("**🔗 Link per approfondimenti:**")
-    for comp in portafoglio['componenti']:
-        st.markdown(f"- [{comp['nome']}]({comp['link_info']})")
-    
-    # Calcolo TER medio ponderato (se multi-ETF)
-    if len(portafoglio['componenti']) > 1:
-        ter_medio = sum(
-            float(comp['ter'].replace('%', '')) * float(comp['allocazione'].replace('%', '')) / 100
-            for comp in portafoglio['componenti']
-        )
-        st.info(f"💰 **TER medio ponderato del portafoglio:** {ter_medio:.2f}%")
+def get_risk_category(risk_level):
+    """Restituisce la categoria di rischio basata sul livello"""
+    if risk_level <= 2:
+        return 'Basso'
+    elif risk_level <= 5:
+        return 'Medio'
+    else:
+        return 'Alto'
 
 
-# Sidebar per navigazione
-st.sidebar.title("📋 Navigazione")
-st.sidebar.markdown("""
-Scegli il profilo di rischio più adatto alle tue esigenze:
-- **Basso Rischio**: Stabilità e protezione (3-7+ anni)
-- **Medio Rischio**: Equilibrio crescita/stabilità (10+ anni)
-- **Alto Rischio**: Massima crescita di lungo periodo (10+ anni)
-""")
-
-profilo_selezionato = st.sidebar.radio(
-    "Vai alla sezione:",
-    ["Tutti i Portafogli", "Basso Rischio", "Medio Rischio", "Alto Rischio"]
-)
-
-# Carica i dati
-portafogli_data = get_portafogli_data()
-
-# Funzione per mostrare una categoria di portafogli
-def mostra_categoria(categoria_key, categoria_data):
-    st.header(categoria_data['titolo'])
-    st.markdown(categoria_data['descrizione'])
+def get_risk_badge_html(risk_level):
+    """Genera HTML per il badge del rischio"""
+    category = get_risk_category(risk_level)
     
-    for i, portafoglio in enumerate(categoria_data['portafogli'], 1):
-        with st.expander(f"📁 {portafoglio['nome']}", expanded=(i == 1)):
-            mostra_portafoglio(portafoglio)
+    if category == 'Basso':
+        css_class = 'risk-low'
+        icon = '🛡️'
+    elif category == 'Medio':
+        css_class = 'risk-medium'
+        icon = '⚖️'
+    else:
+        css_class = 'risk-high'
+        icon = '🚀'
+    
+    return f'<span class="risk-badge {css_class}">{icon} Rischio {risk_level} - {category}</span>'
+
+
+def display_portfolio(portfolio, show_expanded=False):
+    """Visualizza un singolo portafoglio in un expander"""
+    
+    # Titolo del portafoglio
+    title = f"{portfolio['id']} - Orizzonte: {portfolio['min_duration']} anni"
+    
+    # Badge ESG se applicabile
+    if portfolio['esg'] == 1:
+        title += " 🌱"
+    
+    with st.expander(title, expanded=show_expanded):
+        # Badge rischio
+        st.markdown(get_risk_badge_html(portfolio['risk_level']), unsafe_allow_html=True)
+        
+        # Informazioni generali
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            st.metric("Orizzonte Minimo", f"{portfolio['min_duration']} anni")
+        
+        with col2:
+            st.metric("Ribilanciamento", portfolio['rebalance'])
+        
+        with col3:
+            n_components = len(portfolio['components'])
+            st.metric("N° ETF", n_components)
+        
+        # Note se presenti
+        if portfolio['note']:
+            st.info(f"ℹ️ {portfolio['note']}")
+        
+        # Tabella componenti
+        if portfolio['components']:
+            st.markdown("**📋 Composizione del Portafoglio:**")
+            
+            # Prepara i dati per la tabella
+            df_data = []
+            for comp in portfolio['components']:
+                df_data.append({
+                    'Allocazione': f"{comp['percentage']}%",
+                    'Nome ETF': comp['name'],
+                    'ISIN': comp['isin'],
+                    'TER': f"{comp['ter']}%"
+                })
+            
+            df = pd.DataFrame(df_data)
+            st.dataframe(df, use_container_width=True, hide_index=True)
+            
+            # Calcola TER medio ponderato
+            if len(portfolio['components']) > 1:
+                ter_medio = sum(
+                    float(comp['ter']) * float(comp['percentage']) / 100
+                    for comp in portfolio['components']
+                )
+                st.success(f"💰 **TER medio ponderato:** {ter_medio:.3f}%")
+            else:
+                st.success(f"💰 **TER:** {portfolio['components'][0]['ter']}%")
+            
+            # Link JustETF per ogni componente
+            st.markdown("**🔗 Link di approfondimento:**")
+            for comp in portfolio['components']:
+                link = f"https://www.justetf.com/it/etf-profile.html?isin={comp['isin']}"
+                st.markdown(f"- [{comp['name']}]({link})")
+
+
+def main():
+    # Intestazione
+    st.markdown('<p class="main-header">📊 Portafogli Modello ETF UCITS</p>', unsafe_allow_html=True)
+    
+    st.markdown("""
+    Benvenuto nella guida ai **portafogli modello basati su ETF UCITS**. Questa applicazione 
+    ti aiuta a esplorare diverse strategie di investimento organizzate per profilo di rischio 
+    e orizzonte temporale.
+    """)
+    
+    # Disclaimer iniziale
+    st.warning("""
+    ⚠️ **IMPORTANTE**: Queste informazioni sono fornite **esclusivamente a scopo educativo**. 
+    Non costituiscono consulenza finanziaria personalizzata. Consulta sempre un professionista 
+    prima di prendere decisioni di investimento.
+    """)
     
     st.divider()
+    
+    # Carica i dati
+    portfolios = parse_portfolio_data()
+    
+    # Sidebar per la navigazione
+    st.sidebar.title("🧭 Navigazione")
+    st.sidebar.markdown("---")
+    
+    # Selezione visualizzazione
+    view_type = st.sidebar.radio(
+        "Modalità di visualizzazione:",
+        ["📊 Per Livello di Rischio", "📁 Per Categoria", "🔍 Tutti i Portafogli"]
+    )
+    
+    st.sidebar.markdown("---")
+    
+    # Filtri
+    st.sidebar.subheader("🎯 Filtri")
+    
+    # Filtro rischio
+    all_risks = sorted(set(
+        p['risk_level'] 
+        for section in portfolios.values() 
+        for p in section
+    ))
+    
+    risk_filter = st.sidebar.multiselect(
+        "Livello di Rischio:",
+        options=all_risks,
+        default=all_risks,
+        format_func=lambda x: f"Rischio {x} - {get_risk_category(x)}"
+    )
+    
+    # Filtro ESG
+    esg_filter = st.sidebar.checkbox("Solo portafogli ESG", value=False)
+    
+    # Filtro numero ETF
+    single_only = st.sidebar.checkbox("Solo portafogli single ETF", value=False)
+    
+    st.sidebar.markdown("---")
+    
+    # Info box nella sidebar
+    st.sidebar.info("""
+    **📖 Legenda:**
+    - 🛡️ Rischio Basso (1-2)
+    - ⚖️ Rischio Medio (3-5)
+    - 🚀 Rischio Alto (6-8)
+    - 🌱 ESG compliant
+    """)
+    
+    # Contenuto principale
+    if view_type == "📊 Per Livello di Rischio":
+        display_by_risk(portfolios, risk_filter, esg_filter, single_only)
+    
+    elif view_type == "📁 Per Categoria":
+        display_by_category(portfolios, risk_filter, esg_filter, single_only)
+    
+    else:  # Tutti i portafogli
+        display_all_portfolios(portfolios, risk_filter, esg_filter, single_only)
+    
+    # Sezione educativa
+    st.divider()
+    display_educational_section()
+    
+    # Footer con disclaimer
+    display_footer()
 
 
-# Mostra i portafogli in base alla selezione
-if profilo_selezionato == "Tutti i Portafogli":
-    mostra_categoria("basso_rischio", portafogli_data["basso_rischio"])
-    mostra_categoria("medio_rischio", portafogli_data["medio_rischio"])
-    mostra_categoria("alto_rischio", portafogli_data["alto_rischio"])
-elif profilo_selezionato == "Basso Rischio":
-    mostra_categoria("basso_rischio", portafogli_data["basso_rischio"])
-elif profilo_selezionato == "Medio Rischio":
-    mostra_categoria("medio_rischio", portafogli_data["medio_rischio"])
-elif profilo_selezionato == "Alto Rischio":
-    mostra_categoria("alto_rischio", portafogli_data["alto_rischio"])
+def filter_portfolios(portfolios, risk_filter, esg_filter, single_only):
+    """Applica i filtri ai portafogli"""
+    filtered = {'multi': [], 'single': [], 'esg': []}
+    
+    for section, portfolio_list in portfolios.items():
+        for portfolio in portfolio_list:
+            # Filtro rischio
+            if portfolio['risk_level'] not in risk_filter:
+                continue
+            
+            # Filtro ESG
+            if esg_filter and portfolio['esg'] != 1:
+                continue
+            
+            # Filtro single ETF
+            if single_only and len(portfolio['components']) > 1:
+                continue
+            
+            filtered[section].append(portfolio)
+    
+    return filtered
 
 
-# Disclaimer finale
-st.markdown("---")
-st.warning("""
-### ⚠️ Disclaimer Importante
+def display_by_risk(portfolios, risk_filter, esg_filter, single_only):
+    """Visualizza portafogli organizzati per livello di rischio"""
+    st.header("📊 Portafogli per Livello di Rischio")
+    
+    filtered = filter_portfolios(portfolios, risk_filter, esg_filter, single_only)
+    
+    # Combina tutti i portafogli
+    all_portfolios = []
+    for section in filtered.values():
+        all_portfolios.extend(section)
+    
+    # Ordina per livello di rischio
+    all_portfolios.sort(key=lambda x: x['risk_level'])
+    
+    # Raggruppa per categoria di rischio
+    risk_groups = {
+        'Basso': [],
+        'Medio': [],
+        'Alto': []
+    }
+    
+    for portfolio in all_portfolios:
+        category = get_risk_category(portfolio['risk_level'])
+        risk_groups[category].append(portfolio)
+    
+    # Visualizza ogni gruppo
+    for category in ['Basso', 'Medio', 'Alto']:
+        if risk_groups[category]:
+            if category == 'Basso':
+                icon = '🛡️'
+                color = '#90EE90'
+            elif category == 'Medio':
+                icon = '⚖️'
+                color = '#FFD700'
+            else:
+                icon = '🚀'
+                color = '#FFA07A'
+            
+            st.markdown(f"### {icon} Rischio {category}")
+            st.markdown(f"<div style='background-color: {color}; padding: 0.5rem; border-radius: 0.5rem; margin-bottom: 1rem;'>Trovati {len(risk_groups[category])} portafogli</div>", unsafe_allow_html=True)
+            
+            for portfolio in risk_groups[category]:
+                display_portfolio(portfolio)
+            
+            st.divider()
 
-Queste informazioni sono fornite **esclusivamente a scopo educativo e informativo**. 
-I portafogli presentati sono **esempi teorici** e non costituiscono:
 
-- Consulenza finanziaria personalizzata
-- Raccomandazioni di investimento
-- Garanzie di rendimento futuro
+def display_by_category(portfolios, risk_filter, esg_filter, single_only):
+    """Visualizza portafogli organizzati per categoria"""
+    st.header("📁 Portafogli per Categoria")
+    
+    filtered = filter_portfolios(portfolios, risk_filter, esg_filter, single_only)
+    
+    # Portafogli Multi-ETF
+    if filtered['multi']:
+        st.subheader("🎯 Portafogli Multi-ETF")
+        st.markdown("Portafogli diversificati con più componenti ETF")
+        for portfolio in sorted(filtered['multi'], key=lambda x: x['risk_level']):
+            display_portfolio(portfolio)
+        st.divider()
+    
+    # Portafogli Single ETF
+    if filtered['single']:
+        st.subheader("⭐ Portafogli Single ETF")
+        st.markdown("Portafogli semplificati con un unico ETF - ideali per principianti")
+        for portfolio in sorted(filtered['single'], key=lambda x: x['risk_level']):
+            display_portfolio(portfolio)
+        st.divider()
+    
+    # Portafogli ESG
+    if filtered['esg']:
+        st.subheader("🌱 Portafogli ESG")
+        st.markdown("Portafogli con focus su criteri ambientali, sociali e di governance")
+        for portfolio in sorted(filtered['esg'], key=lambda x: x['risk_level']):
+            display_portfolio(portfolio)
+        st.divider()
+    
+    # Messaggio se nessun portafoglio corrisponde ai filtri
+    if not any(filtered.values()):
+        st.info("Nessun portafoglio corrisponde ai filtri selezionati. Prova a modificare i criteri di ricerca.")
 
-**Prima di investire:**
-1. Valuta attentamente la tua situazione finanziaria personale
-2. Considera il tuo orizzonte temporale e la tua tolleranza al rischio
-3. Fai le tue ricerche approfondite sui prodotti finanziari
-4. Consulta un consulente finanziario professionale se necessario
 
-I rendimenti passati non sono indicativi dei rendimenti futuri. Ogni investimento comporta rischi, 
-inclusa la possibile perdita del capitale investito.
-""")
+def display_all_portfolios(portfolios, risk_filter, esg_filter, single_only):
+    """Visualizza tutti i portafogli"""
+    st.header("🔍 Tutti i Portafogli")
+    
+    filtered = filter_portfolios(portfolios, risk_filter, esg_filter, single_only)
+    
+    # Combina e ordina tutti i portafogli
+    all_portfolios = []
+    for section in filtered.values():
+        all_portfolios.extend(section)
+    
+    all_portfolios.sort(key=lambda x: (x['risk_level'], x['id']))
+    
+    if all_portfolios:
+        st.info(f"Trovati **{len(all_portfolios)} portafogli** che corrispondono ai filtri selezionati")
+        
+        for portfolio in all_portfolios:
+            display_portfolio(portfolio)
+    else:
+        st.warning("Nessun portafoglio corrisponde ai filtri selezionati.")
 
-# Footer
-st.markdown("---")
-st.markdown("""
-<div style='text-align: center; color: gray;'>
-    <small>App creata a scopo didattico • Dati aggiornati a Dicembre 2025 • 
-    Verifica sempre le informazioni più recenti sui siti ufficiali degli emittenti</small>
-</div>
-""", unsafe_allow_html=True)
+
+def display_educational_section():
+    """Visualizza la sezione educativa"""
+    st.header("📚 Guida Rapida agli Investimenti")
+    
+    tab1, tab2, tab3, tab4 = st.tabs([
+        "💡 Concetti Base", 
+        "⚖️ Livelli di Rischio", 
+        "🎯 Come Scegliere", 
+        "📖 Glossario"
+    ])
+    
+    with tab1:
+        st.markdown("""
+        ### 💡 Concetti Base
+        
+        **Cos'è un ETF?**
+        
+        Un ETF (Exchange Traded Fund) è un fondo di investimento quotato in borsa che replica 
+        l'andamento di un indice, permettendo di diversificare con un unico strumento.
+        
+        **Cos'è il TER?**
+        
+        Il TER (Total Expense Ratio) è il costo annuo totale dell'ETF espresso in percentuale. 
+        Un TER dello 0,20% significa che paghi 2€ all'anno per ogni 1.000€ investiti.
+        
+        **Perché diversificare?**
+        
+        La diversificazione riduce il rischio specifico investendo in molti asset diversi. 
+        Come dice il proverbio: "Non mettere tutte le uova nello stesso paniere".
+        """)
+    
+    with tab2:
+        st.markdown("""
+        ### ⚖️ Comprendere i Livelli di Rischio
+        
+        **Rischio ≠ Probabilità di Perdita nel Lungo Periodo**
+        
+        Il "rischio" in questa guida si riferisce alla **volatilità** (oscillazioni di valore), 
+        non alla probabilità di perdere denaro su un orizzonte di 10-15 anni.
+        
+        **🛡️ Rischio Basso (1-2)**
+        - Volatilità: 5-15% annua
+        - Drawdown tipico: -10% / -20%
+        - Ideale per: Orizzonti 3-7 anni, bassa tolleranza al rischio
+        
+        **⚖️ Rischio Medio (3-5)**
+        - Volatilità: 10-20% annua
+        - Drawdown tipico: -20% / -35%
+        - Ideale per: Orizzonti 7-15 anni, moderata tolleranza al rischio
+        
+        **🚀 Rischio Alto (6-8)**
+        - Volatilità: 15-25%+ annua
+        - Drawdown tipico: -30% / -50%+
+        - Ideale per: Orizzonti 15+ anni, alta tolleranza al rischio
+        
+        **⚠️ Il Vero Rischio è Vendere nel Momento Sbagliato**
+        
+        La maggior parte degli investitori perde denaro non a causa del mercato, ma perché 
+        vende durante i ribassi trasformando perdite temporanee in perdite permanenti.
+        """)
+    
+    with tab3:
+        st.markdown("""
+        ### 🎯 Come Scegliere il Portafoglio Giusto
+        
+        **1. Definisci il Tuo Orizzonte Temporale**
+        - Meno di 3 anni → Rischio Basso
+        - 3-10 anni → Rischio Basso/Medio
+        - 10+ anni → Qualsiasi livello
+        
+        **2. Valuta la Tua Tolleranza Emotiva**
+        
+        Chiediti: "Se il mio portafoglio perdesse il 30% in un anno, riuscirei a non vendere?"
+        - NO → Rischio Basso/Medio
+        - SÌ, ma con difficoltà → Rischio Medio
+        - SÌ, tranquillamente → Rischio Alto
+        
+        **3. Considera la Complessità**
+        - Principiante → Portafogli Single ETF (⭐)
+        - Intermedio → Portafogli con 2-4 ETF (⭐⭐)
+        - Avanzato → Portafogli multi-componente (⭐⭐⭐)
+        
+        **4. Ribilanciamento**
+        - "NO" → Non richiede manutenzione
+        - "1y" → Ribilanciamento annuale consigliato
+        - "3M" → Ribilanciamento trimestrale (solo per esperti)
+        """)
+    
+    with tab4:
+        st.markdown("""
+        ### 📖 Glossario dei Termini
+        
+        **UCITS**: Standard europeo per fondi che garantisce elevati livelli di protezione degli investitori
+        
+        **Accumulating (Acc)**: ETF che reinveste automaticamente i dividendi
+        
+        **TER (Total Expense Ratio)**: Costo annuo di gestione dell'ETF
+        
+        **ISIN**: Codice identificativo internazionale del titolo
+        
+        **Rebalancing**: Processo di riportare le allocazioni ai pesi obiettivo
+        
+        **ESG**: Environmental, Social, Governance - criteri di investimento sostenibile
+        
+        **Factor Investing**: Strategia che si concentra su specifici fattori (Value, Momentum, Quality, ecc.)
+        
+        **Duration**: Sensibilità di un'obbligazione alle variazioni dei tassi di interesse
+        
+        **Drawdown**: Perdita massima dal picco precedente
+        
+        **Volatilità**: Misura delle oscillazioni di prezzo di un asset
+        """)
+
+
+def display_footer():
+    """Visualizza il footer con disclaimer"""
+    st.divider()
+    
+    st.error("""
+    ### ⚠️ DISCLAIMER IMPORTANTE
+    
+    Le informazioni contenute in questa applicazione sono fornite **esclusivamente a scopo 
+    educativo e informativo**. I portafogli presentati sono esempi teorici e **NON costituiscono**:
+    
+    - ❌ Consulenza finanziaria personalizzata
+    - ❌ Raccomandazioni di investimento
+    - ❌ Garanzie di rendimento futuro
+    - ❌ Analisi della tua situazione finanziaria personale
+    
+    **Prima di investire:**
+    
+    1. 📊 Valuta attentamente la tua situazione finanziaria
+    2. ⏰ Considera il tuo orizzonte temporale
+    3. 🧠 Analizza la tua tolleranza al rischio
+    4. 🔍 Effettua ricerche approfondite sui prodotti
+    5. 👨‍💼 Consulta un consulente finanziario professionista
+    
+    **⚠️ Rischi degli Investimenti:**
+    
+    - I rendimenti passati non garantiscono rendimenti futuri
+    - Ogni investimento comporta il rischio di perdita del capitale
+    - La volatilità può causare perdite temporanee significative
+    - I dati potrebbero non essere aggiornati
+    
+    **Verifica sempre le informazioni più recenti sui siti ufficiali degli emittenti prima di investire.**
+    """)
+    
+    st.markdown("---")
+    st.markdown("""
+    <div style='text-align: center; color: gray;'>
+        <p><strong>Portfolio ETF Explorer</strong> | Versione 2.0 | Dicembre 2025</p>
+        <p><small>Applicazione educativa - Non costituisce consulenza finanziaria</small></p>
+        <p><small>Dati estratti da AzionarioPort.txt - Verifica sempre presso fonti ufficiali</small></p>
+    </div>
+    """, unsafe_allow_html=True)
+
+
+if __name__ == "__main__":
+    main()
