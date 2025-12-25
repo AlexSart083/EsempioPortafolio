@@ -39,6 +39,10 @@ st.markdown("""
         background-color: #FFA07A;
         color: #8B0000;
     }
+    .risk-very-high {
+        background-color: #8B0000;
+        color: #FFFFFF;
+    }
     .info-box {
         background-color: #f0f8ff;
         padding: 1rem;
@@ -80,8 +84,10 @@ def get_risk_category(risk_level):
         return 'Basso'
     elif risk_level <= 5:
         return 'Medio'
-    else:
+    elif risk_level <= 7:
         return 'Alto'
+    else:  # risk_level == 8
+        return 'Molto Alto'
 
 
 def get_risk_badge_html(risk_level):
@@ -94,9 +100,12 @@ def get_risk_badge_html(risk_level):
     elif category == 'Medio':
         css_class = 'risk-medium'
         icon = '⚖️'
-    else:
+    elif category == 'Alto':
         css_class = 'risk-high'
         icon = '🚀'
+    else:  # Molto Alto
+        css_class = 'risk-very-high'
+        icon = '⚡'
     
     return f'<span class="risk-badge {css_class}">{icon} Rischio {risk_level} - {category}</span>'
 
@@ -114,6 +123,23 @@ def display_portfolio(portfolio, show_expanded=False):
     with st.expander(title, expanded=show_expanded):
         # Badge rischio
         st.markdown(get_risk_badge_html(portfolio['risk_level']), unsafe_allow_html=True)
+        
+        # Warning speciale per rischio 8
+        if portfolio['risk_level'] == 8:
+            st.error("""
+            ⚠️ **ATTENZIONE: PORTAFOGLIO CON LEVERAGE (2x)**
+            
+            Questo portafoglio utilizza strumenti con leva finanziaria che amplificano sia i guadagni che le perdite.
+            
+            **Rischi Principali:**
+            - ❌ NON adatto a principianti
+            - ❌ Richiede esperienza e monitoraggio costante
+            - ⚠️ Rischio di perdite superiori al 50% in brevi periodi
+            - ⚠️ Effetto "decay" in mercati laterali
+            - ⚠️ Ribilanciamento trimestrale obbligatorio
+            
+            **Consigliato SOLO per investitori esperti che comprendono completamente i rischi del leverage.**
+            """)
         
         # Informazioni generali
         col1, col2, col3 = st.columns(3)
@@ -486,14 +512,6 @@ def calculate_recommendations(portfolios, age_range, initial_capital, time_horiz
     # ============================================================================
     # ⚠️ CRITICAL FIX: HARD LIMITS BASATI SULLA TOLLERANZA AL RISCHIO
     # ============================================================================
-    # La tolleranza emotiva ha PRIORITÀ ASSOLUTA su qualsiasi altro fattore.
-    # Non importa l'età, l'orizzonte temporale o gli obiettivi: se una persona
-    # non riesce a gestire emotivamente la volatilità, NON può avere portafogli
-    # ad alto rischio, altrimenti venderà nel momento sbagliato trasformando
-    # perdite temporanee in perdite permanenti.
-    #
-    # Questo è IL fattore più importante: meglio rendimenti minori che vendere in panic.
-    
     risk_tolerance_hard_caps = {
         "😰 Venderei immediatamente - Non sopporto le perdite": 2,
         "😟 Sarei molto preoccupato - Probabilmente venderei": 3,
@@ -504,24 +522,21 @@ def calculate_recommendations(portfolios, age_range, initial_capital, time_horiz
     
     max_risk_allowed = risk_tolerance_hard_caps.get(risk_tolerance, 5)
     
-    # APPLICA IL LIMITE INVALICABILE - rimuovi tutti i livelli superiori al cap
+    # APPLICA IL LIMITE INVALICABILE
     recommended_risks = [r for r in recommended_risks if r <= max_risk_allowed]
     
     # Se il filtro ha eliminato tutto, usa il massimo consentito e quello sotto
     if not recommended_risks:
         recommended_risks = [max(1, max_risk_allowed - 1), max_risk_allowed]
     
-    # ============================================================================
-    
     # STEP 2: Determina preferenze di complessità
-
     
     # Capitale → influenza su single vs multi
     capital_preference = {
-        "Meno di 5.000€": "single",  # Con poco capitale meglio single
+        "Meno di 5.000€": "single",
         "5.000€ - 20.000€": "flexible",
         "20.000€ - 50.000€": "flexible",
-        "Più di 50.000€": "multi_ok"  # Con molto capitale può diversificare
+        "Più di 50.000€": "multi_ok"
     }
     
     capital_pref = capital_preference.get(initial_capital, "flexible")
@@ -629,7 +644,7 @@ def calculate_recommendations(portfolios, age_range, initial_capital, time_horiz
         # Vicinanza al rischio ideale
         ideal_risk = recommended_risks[len(recommended_risks)//2] if recommended_risks else 4
         risk_distance = abs(portfolio['risk_level'] - ideal_risk)
-        score -= risk_distance * 3  # Penalità maggiore per distanza dal rischio ideale
+        score -= risk_distance * 3
         
         candidates.append({
             'portfolio': portfolio,
@@ -826,136 +841,6 @@ def display_wizard_results(results, all_portfolios):
     """)
 
 
-def main():
-    # Intestazione
-    st.markdown('<p class="main-header">📊 Portafogli Modello ETF UCITS</p>', unsafe_allow_html=True)
-    
-    st.markdown("""
-    Benvenuto nella guida ai **portafogli modello basati su ETF UCITS**. Questa applicazione 
-    ti aiuta a esplorare diverse strategie di investimento organizzate per profilo di rischio 
-    e orizzonte temporale.
-    """)
-    
-    # Disclaimer iniziale
-    st.warning("""
-    ⚠️ **IMPORTANTE**: Queste informazioni sono fornite **esclusivamente a scopo educativo**. 
-    Non costituiscono consulenza finanziaria personalizzata. Consulta sempre un professionista 
-    prima di prendere decisioni di investimento.
-    """)
-    
-    st.divider()
-    
-    # Carica i dati
-    portfolios = load_portfolios()
-    
-    # Controlla se ci sono portafogli caricati
-    total_portfolios = sum(len(portfolios[section]) for section in portfolios)
-    
-    if total_portfolios == 0:
-        st.error("""
-        ### ❌ Nessun portafoglio caricato
-        
-        L'applicazione non ha potuto caricare i dati dei portafogli.
-        Verifica che il file `portfolios_data.py` sia presente nella stessa directory di `app.py`.
-        """)
-        return
-    
-    # Sidebar per la navigazione
-    st.sidebar.title("🧭 Navigazione")
-    st.sidebar.markdown("---")
-    
-    # Selezione modalità principale
-    main_mode = st.sidebar.radio(
-        "Scegli come procedere:",
-        ["🎯 Guidami alla Scelta (Consigliato)", "🔍 Esplora Liberamente"],
-        help="La modalità guidata ti aiuta a trovare il portafoglio ideale con domande mirate"
-    )
-    
-    if main_mode == "🔍 Esplora Liberamente":
-        st.sidebar.markdown("---")
-        
-        # Selezione visualizzazione
-        view_type = st.sidebar.radio(
-            "Modalità di visualizzazione:",
-            ["📊 Per Livello di Rischio", "📁 Per Categoria", "🔍 Tutti i Portafogli"]
-        )
-        
-        st.sidebar.markdown("---")
-        
-        # Filtri
-        st.sidebar.subheader("🎯 Filtri")
-        
-        # Filtro rischio
-        all_risks = sorted(set(
-            p['risk_level'] 
-            for section in portfolios.values() 
-            for p in section
-        ))
-        
-        risk_filter = st.sidebar.multiselect(
-            "Livello di Rischio:",
-            options=all_risks,
-            default=all_risks,
-            format_func=lambda x: f"Rischio {x} - {get_risk_category(x)}"
-        )
-        
-        # Filtro ESG
-        esg_filter = st.sidebar.checkbox("Solo portafogli ESG", value=False)
-        
-        # Filtro numero ETF
-        single_only = st.sidebar.checkbox("Solo portafogli single ETF", value=False)
-        
-        st.sidebar.markdown("---")
-        
-        # Info box nella sidebar
-        st.sidebar.info("""
-        **📖 Legenda:**
-        - 🛡️ Rischio Basso (1-2)
-        - ⚖️ Rischio Medio (3-5)
-        - 🚀 Rischio Alto (6-8)
-        - 🌱 ESG compliant
-        """)
-        
-        # Contenuto principale - Modalità esplorazione
-        if view_type == "📊 Per Livello di Rischio":
-            display_by_risk(portfolios, risk_filter, esg_filter, single_only)
-        
-        elif view_type == "📁 Per Categoria":
-            display_by_category(portfolios, risk_filter, esg_filter, single_only)
-        
-        else:  # Tutti i portafogli
-            display_all_portfolios(portfolios, risk_filter, esg_filter, single_only)
-    
-    else:
-        # Modalità wizard guidato
-        st.sidebar.markdown("---")
-        st.sidebar.info("""
-        🎯 **Modalità Guidata**
-        
-        Rispondi a 10 domande approfondite per scoprire i portafogli più adatti a te.
-        
-        ⏱️ Richiede circa 3-4 minuti
-        
-        📊 Algoritmo avanzato che analizza:
-        - Profilo personale e età
-        - Capitale e patrimonio
-        - Obiettivi e orizzonte
-        - Esperienza e tolleranza
-        - Preferenze ESG e gestione
-        
-        ⚠️ Il rischio 8 (leverage) è escluso per sicurezza
-        """)
-        
-        portfolio_wizard(portfolios)
-    
-    # Sezione educativa
-    st.divider()
-    display_educational_section()
-    
-    # Footer con disclaimer
-    display_footer()
-
-
 def filter_portfolios(portfolios, risk_filter, esg_filter, single_only):
     """Applica i filtri ai portafogli"""
     filtered = {'multi': [], 'single': [], 'esg': []}
@@ -997,7 +882,8 @@ def display_by_risk(portfolios, risk_filter, esg_filter, single_only):
     risk_groups = {
         'Basso': [],
         'Medio': [],
-        'Alto': []
+        'Alto': [],
+        'Molto Alto': []  # NUOVA CATEGORIA PER RISCHIO 8
     }
     
     for portfolio in all_portfolios:
@@ -1005,7 +891,7 @@ def display_by_risk(portfolios, risk_filter, esg_filter, single_only):
         risk_groups[category].append(portfolio)
     
     # Visualizza ogni gruppo
-    for category in ['Basso', 'Medio', 'Alto']:
+    for category in ['Basso', 'Medio', 'Alto', 'Molto Alto']:
         if risk_groups[category]:
             if category == 'Basso':
                 icon = '🛡️'
@@ -1013,12 +899,25 @@ def display_by_risk(portfolios, risk_filter, esg_filter, single_only):
             elif category == 'Medio':
                 icon = '⚖️'
                 color = '#FFD700'
-            else:
+            elif category == 'Alto':
                 icon = '🚀'
                 color = '#FFA07A'
+            else:  # Molto Alto
+                icon = '⚡'
+                color = '#8B0000'
             
             st.markdown(f"### {icon} Rischio {category}")
             st.markdown(f"<div style='background-color: {color}; padding: 0.5rem; border-radius: 0.5rem; margin-bottom: 1rem;'>Trovati {len(risk_groups[category])} portafogli</div>", unsafe_allow_html=True)
+            
+            # Warning speciale per categoria Molto Alto
+            if category == 'Molto Alto':
+                st.error("""
+                ⚠️ **ATTENZIONE: PORTAFOGLI CON LEVERAGE**
+                
+                I portafogli in questa categoria utilizzano strumenti con leva finanziaria (2x) che amplificano 
+                sia i guadagni che le perdite. Sono destinati SOLO ad investitori esperti che comprendono 
+                completamente i rischi del leverage, compresi l'effetto decay e la necessità di ribilanciamento frequente.
+                """)
             
             for portfolio in risk_groups[category]:
                 display_portfolio(portfolio)
@@ -1133,15 +1032,31 @@ def display_educational_section():
         - Drawdown tipico: -20% / -35%
         - Ideale per: Orizzonti 7-15 anni, moderata tolleranza al rischio
         
-        **🚀 Rischio Alto (6-8)**
-        - Volatilità: 15-25%+ annua
-        - Drawdown tipico: -30% / -50%+
+        **🚀 Rischio Alto (6-7)**
+        - Volatilità: 15-25% annua
+        - Drawdown tipico: -30% / -50%
         - Ideale per: Orizzonti 15+ anni, alta tolleranza al rischio
+        
+        **⚡ Rischio Molto Alto (8) - LEVERAGE**
+        - Volatilità: 30-50%+ annua
+        - Drawdown tipico: -50% / -80%+
+        - ⚠️ Utilizza leva finanziaria (2x)
+        - ❌ NON adatto a principianti
+        - ⚠️ Effetto "decay" in mercati laterali
+        - ⚠️ Richiede ribilanciamento frequente (trimestrale)
+        - Ideale per: SOLO investitori esperti con alta tolleranza al rischio e comprensione del leverage
         
         **⚠️ Il Vero Rischio è Vendere nel Momento Sbagliato**
         
         La maggior parte degli investitori perde denaro non a causa del mercato, ma perché 
         vende durante i ribassi trasformando perdite temporanee in perdite permanenti.
+        
+        **Nota sul Leverage (Rischio 8):**
+        
+        I portafogli con leverage amplificano i movimenti del mercato. Un ETF con leva 2x in teoria 
+        dovrebbe raddoppiare i rendimenti giornalieri, ma a causa dell'effetto "compound decay", 
+        le performance reali differiscono significativamente da quelle attese su periodi lunghi. 
+        Questo rende il leverage inadatto per strategie buy-and-hold passive.
         """)
     
     with tab3:
@@ -1151,7 +1066,7 @@ def display_educational_section():
         **1. Definisci il Tuo Orizzonte Temporale**
         - Meno di 3 anni → Rischio Basso
         - 3-10 anni → Rischio Basso/Medio
-        - 10+ anni → Qualsiasi livello
+        - 10+ anni → Qualsiasi livello (eccetto 8 se non sei esperto)
         
         **2. Valuta la Tua Tolleranza Emotiva**
         
@@ -1159,16 +1074,30 @@ def display_educational_section():
         - NO → Rischio Basso/Medio
         - SÌ, ma con difficoltà → Rischio Medio
         - SÌ, tranquillamente → Rischio Alto
+        - SÌ, e comprerei di più → Forse Rischio Molto Alto (se esperto)
         
         **3. Considera la Complessità**
         - Principiante → Portafogli Single ETF (⭐)
         - Intermedio → Portafogli con 2-4 ETF (⭐⭐)
         - Avanzato → Portafogli multi-componente (⭐⭐⭐)
+        - Esperto → Portafogli con leverage (⚡) - SOLO se comprendi i rischi
         
         **4. Ribilanciamento**
         - "NO" → Non richiede manutenzione
         - "1y" → Ribilanciamento annuale consigliato
-        - "3M" → Ribilanciamento trimestrale (solo per esperti)
+        - "3M" → Ribilanciamento trimestrale (solo per esperti, tipicamente per leverage)
+        
+        **5. Attenzione al Leverage (Rischio 8)**
+        
+        I portafogli con leverage sono strumenti avanzati che richiedono:
+        - Comprensione profonda dei mercati
+        - Monitoraggio costante
+        - Gestione attiva e ribilanciamento frequente
+        - Tolleranza a perdite molto elevate
+        - Esperienza con strumenti derivati
+        
+        Se non sei assolutamente certo di comprendere il leverage e l'effetto decay, 
+        rimani sui livelli di rischio 1-7.
         """)
     
     with tab4:
@@ -1194,6 +1123,13 @@ def display_educational_section():
         **Drawdown**: Perdita massima dal picco precedente
         
         **Volatilità**: Misura delle oscillazioni di prezzo di un asset
+        
+        **Leverage (Leva)**: Uso di debito o derivati per amplificare l'esposizione al mercato. 
+        Un ETF con leva 2x mira a fornire il doppio del rendimento giornaliero dell'indice sottostante.
+        
+        **Decay (Decadimento)**: Effetto negativo sui rendimenti di lungo periodo degli ETF con leva 
+        dovuto alla composizione giornaliera. In mercati laterali o volatili, il valore tende a diminuire 
+        anche se l'indice sottostante rimane stabile.
         """)
 
 
@@ -1226,6 +1162,7 @@ def display_footer():
     - Ogni investimento comporta il rischio di perdita del capitale
     - La volatilità può causare perdite temporanee significative
     - I dati potrebbero non essere aggiornati
+    - I portafogli con leverage (Rischio 8) presentano rischi amplificati
     
     **Verifica sempre le informazioni più recenti sui siti ufficiali degli emittenti prima di investire.**
     """)
@@ -1233,11 +1170,143 @@ def display_footer():
     st.markdown("---")
     st.markdown("""
     <div style='text-align: center; color: gray;'>
-        <p><strong>Portfolio ETF Explorer</strong> | Versione 3.2 (Critical Risk Tolerance Fix) | Dicembre 2024</p>
+        <p><strong>Portfolio ETF Explorer</strong> | Versione 3.3 (Risk 8 Category Fix) | Dicembre 2024</p>
         <p><small>Applicazione educativa - Non costituisce consulenza finanziaria</small></p>
-        <p><small>✅ Hard Limits Tolleranza al Rischio Implementati</small></p>
+        <p><small>✅ PORT6a e PORT26 corretti a Rischio 6 (Alto)</small></p>
+        <p><small>✅ Categoria separata "Molto Alto" per Rischio 8 (Leverage)</small></p>
     </div>
     """, unsafe_allow_html=True)
+
+
+def main():
+    # Intestazione
+    st.markdown('<p class="main-header">📊 Portafogli Modello ETF UCITS</p>', unsafe_allow_html=True)
+    
+    st.markdown("""
+    Benvenuto nella guida ai **portafogli modello basati su ETF UCITS**. Questa applicazione 
+    ti aiuta a esplorare diverse strategie di investimento organizzate per profilo di rischio 
+    e orizzonte temporale.
+    """)
+    
+    # Disclaimer iniziale
+    st.warning("""
+    ⚠️ **IMPORTANTE**: Queste informazioni sono fornite **esclusivamente a scopo educativo**. 
+    Non costituiscono consulenza finanziaria personalizzata. Consulta sempre un professionista 
+    prima di prendere decisioni di investimento.
+    """)
+    
+    st.divider()
+    
+    # Carica i dati
+    portfolios = load_portfolios()
+    
+    # Controlla se ci sono portafogli caricati
+    total_portfolios = sum(len(portfolios[section]) for section in portfolios)
+    
+    if total_portfolios == 0:
+        st.error("""
+        ### ❌ Nessun portafoglio caricato
+        
+        L'applicazione non ha potuto caricare i dati dei portafogli.
+        Verifica che il file `portfolios_data.py` sia presente nella stessa directory di `app.py`.
+        """)
+        return
+    
+    # Sidebar per la navigazione
+    st.sidebar.title("🧭 Navigazione")
+    st.sidebar.markdown("---")
+    
+    # Selezione modalità principale
+    main_mode = st.sidebar.radio(
+        "Scegli come procedere:",
+        ["🎯 Guidami alla Scelta (Consigliato)", "🔍 Esplora Liberamente"],
+        help="La modalità guidata ti aiuta a trovare il portafoglio ideale con domande mirate"
+    )
+    
+    if main_mode == "🔍 Esplora Liberamente":
+        st.sidebar.markdown("---")
+        
+        # Selezione visualizzazione
+        view_type = st.sidebar.radio(
+            "Modalità di visualizzazione:",
+            ["📊 Per Livello di Rischio", "📁 Per Categoria", "🔍 Tutti i Portafogli"]
+        )
+        
+        st.sidebar.markdown("---")
+        
+        # Filtri
+        st.sidebar.subheader("🎯 Filtri")
+        
+        # Filtro rischio
+        all_risks = sorted(set(
+            p['risk_level'] 
+            for section in portfolios.values() 
+            for p in section
+        ))
+        
+        risk_filter = st.sidebar.multiselect(
+            "Livello di Rischio:",
+            options=all_risks,
+            default=all_risks,
+            format_func=lambda x: f"Rischio {x} - {get_risk_category(x)}"
+        )
+        
+        # Filtro ESG
+        esg_filter = st.sidebar.checkbox("Solo portafogli ESG", value=False)
+        
+        # Filtro numero ETF
+        single_only = st.sidebar.checkbox("Solo portafogli single ETF", value=False)
+        
+        st.sidebar.markdown("---")
+        
+        # Info box nella sidebar
+        st.sidebar.info("""
+        **📖 Legenda:**
+        - 🛡️ Rischio Basso (1-2)
+        - ⚖️ Rischio Medio (3-5)
+        - 🚀 Rischio Alto (6-7)
+        - ⚡ Rischio Molto Alto (8 - Leverage)
+        - 🌱 ESG compliant
+        """)
+        
+        # Contenuto principale - Modalità esplorazione
+        if view_type == "📊 Per Livello di Rischio":
+            display_by_risk(portfolios, risk_filter, esg_filter, single_only)
+        
+        elif view_type == "📁 Per Categoria":
+            display_by_category(portfolios, risk_filter, esg_filter, single_only)
+        
+        else:  # Tutti i portafogli
+            display_all_portfolios(portfolios, risk_filter, esg_filter, single_only)
+    
+    else:
+        # Modalità wizard guidato
+        st.sidebar.markdown("---")
+        st.sidebar.info("""
+        🎯 **Modalità Guidata**
+        
+        Rispondi a 10 domande approfondite per scoprire i portafogli più adatti a te.
+        
+        ⏱️ Richiede circa 3-4 minuti
+        
+        📊 Algoritmo avanzato che analizza:
+        - Profilo personale e età
+        - Capitale e patrimonio
+        - Obiettivi e orizzonte
+        - Esperienza e tolleranza
+        - Preferenze ESG e gestione
+        
+        ⚠️ Il rischio 8 (leverage) è escluso automaticamente per sicurezza
+        """)
+        
+        portfolio_wizard(portfolios)
+    
+    # Sezione educativa
+    st.divider()
+    display_educational_section()
+    
+    # Footer con disclaimer
+    display_footer()
 
 
 if __name__ == "__main__":
