@@ -62,12 +62,7 @@ st.markdown("""
 
 
 def load_portfolios():
-    """
-    Carica i portafogli dal modulo portfolios_data
-    
-    Returns:
-        dict: Dizionario con i portafogli organizzati per categoria
-    """
+    """Carica i portafogli dal modulo portfolios_data"""
     try:
         portfolios = get_all_portfolios()
         stats = get_statistics()
@@ -127,7 +122,7 @@ def display_portfolio(portfolio, show_expanded=False):
         # Badge rischio
         st.markdown(get_risk_badge_html(portfolio['risk_level']), unsafe_allow_html=True)
         
-        # Descrizione strategia (NUOVO)
+        # Descrizione strategia
         st.markdown("### 🎯 Strategia")
         st.info(portfolio['strategy_description'])
         
@@ -148,7 +143,7 @@ def display_portfolio(portfolio, show_expanded=False):
             **Consigliato SOLO per investitori esperti che comprendono completamente i rischi del leverage.**
             """)
         
-        st.markdown("---")  # Separatore visivo
+        st.markdown("---")
         
         # Informazioni generali
         col1, col2, col3 = st.columns(3)
@@ -163,7 +158,7 @@ def display_portfolio(portfolio, show_expanded=False):
             n_components = len(portfolio['components'])
             st.metric("N° ETF", n_components)
         
-        # Note se presenti (oltre alla strategia)
+        # Note se presenti
         if portfolio['note'] and portfolio['note'] != portfolio.get('strategy_description', ''):
             st.info(f"ℹ️ {portfolio['note']}")
         
@@ -239,7 +234,7 @@ def portfolio_wizard(portfolios):
     st.divider()
     
     # Step 2: Orizzonte Temporale
-    st.subheader("⏰ Passo 3: Orizzonte Temporale")
+    st.subheader("⏰ Passo 2: Orizzonte Temporale")
     st.markdown("**Quando prevedi di aver bisogno di questi soldi?**")
     
     time_horizon = st.radio(
@@ -440,7 +435,7 @@ def calculate_recommendations(portfolios, age_range, time_horizon, investment_go
         "3-7 anni - Medio termine": [2, 3],
         "7-10 anni - Medio-lungo termine": [3, 4, 5],
         "10-15 anni - Lungo termine": [4, 5, 6],
-        "Più di 15 anni - Molto lungo termine": [5, 6, 7]  # Escluso 8!
+        "Più di 15 anni - Molto lungo termine": [5, 6, 7]
     }
     
     # Mapping obiettivo → preferenza rischio
@@ -454,10 +449,10 @@ def calculate_recommendations(portfolios, age_range, time_horizon, investment_go
     
     # Mapping percentuale patrimonio → prudenza
     wealth_risk_modifier = {
-        "Tutto o quasi tutto (80-100%)": -2,  # Molto prudente
+        "Tutto o quasi tutto (80-100%)": -2,
         "Parte maggiore (50-80%)": -1,
         "Parte significativa (20-50%)": 0,
-        "Parte minore (meno del 20%)": +1  # Può rischiare di più
+        "Parte minore (meno del 20%)": +1
     }
     
     # Mapping tolleranza emotiva → aggiustamento rischio
@@ -466,7 +461,7 @@ def calculate_recommendations(portfolios, age_range, time_horizon, investment_go
         "😟 Sarei molto preoccupato - Probabilmente venderei": -1,
         "😐 Sarei preoccupato ma manterrei - Capisco la volatilità": 0,
         "😊 Lo vedrei come opportunità - Comprerei di più se possibile": +1,
-        "🚀 Sono tranquillo - È normale, compro ancora": +1  # Max +1 per sicurezza
+        "🚀 Sono tranquillo - È normale, compro ancora": +1
     }
     
     # Mapping stabilità reddito → prudenza
@@ -493,7 +488,7 @@ def calculate_recommendations(portfolios, age_range, time_horizon, investment_go
     recommended_risks = []
     for risk in base_risks:
         adjusted = risk + total_adjustment
-        adjusted = max(1, min(7, adjusted))  # IMPORTANTE: Max 7, non 8!
+        adjusted = max(1, min(7, adjusted))
         recommended_risks.append(adjusted)
     
     # Rimuovi duplicati e ordina
@@ -521,7 +516,6 @@ def calculate_recommendations(portfolios, age_range, time_horizon, investment_go
     
     # STEP 2: Determina preferenze di complessità
     
-    # NUOVA LOGICA SEMPLIFICATA:
     # Single ETF SOLO se: complessità Zero OR esperienza Principiante
     single_only = (
         complexity == "Zero - Voglio investire e dimenticare (set & forget)" or
@@ -540,14 +534,20 @@ def calculate_recommendations(portfolios, age_range, time_horizon, investment_go
     prefer_esg = esg_preference == "Mi interessa ma non è essenziale - Bonus se disponibile"
     
     # STEP 4: Determina complessità massima basata su esperienza
-    
+    # ⚠️ CRITICAL FIX: Aumentato limite per "Base" da 3 a 5
     max_components = {
         "Principiante - È la mia prima volta con investimenti": 1,
-        "Base - Ho letto e studiato, ma poca pratica": 3,
-        "Intermedio - Ho già investito in ETF o fondi": 6,
+        "Base - Ho letto e studiato, ma poca pratica": 5,  # 🔧 AUMENTATO DA 3 A 5
+        "Intermedio - Ho già investito in ETF o fondi": 7,  # 🔧 AUMENTATO DA 6 A 7
         "Esperto - Investo regolarmente e comprendo i mercati": 10
     }
-    max_etfs = max_components.get(experience, 3)
+    max_etfs = max_components.get(experience, 5)
+    
+    # 🔧 BONUS CRITICO: Se l'utente è disposto a gestire complessità moderata/alta
+    # e NON vuole solo single ETF, aumenta ulteriormente il limite
+    if not single_only and complexity in ["Moderata - Posso ribilanciare ogni 3-6 mesi se necessario",
+                                          "Alta - Mi piace monitorare e gestire attivamente"]:
+        max_etfs += 2  # Permetti portafogli un po' più complessi
     
     # STEP 5: Filtra e punteggia i portafogli
     
@@ -604,6 +604,11 @@ def calculate_recommendations(portfolios, age_range, time_horizon, investment_go
         if complexity == "Moderata - Posso ribilanciare ogni 3-6 mesi se necessario":
             if portfolio['rebalance'] in ['NO', '1y']:
                 score += 8
+        
+        # 🔧 PENALITÀ PER SINGLE ETF se NON è preferito
+        # Questo aiuta a far emergere i multi-ETF quando l'utente è disposto a gestirli
+        if not prefer_single and not single_only and len(portfolio['components']) == 1:
+            score -= 5
         
         # Bonus per match con obiettivo
         if investment_goal == "Preservazione capitale - Proteggere dall'inflazione":
@@ -716,6 +721,8 @@ def display_wizard_results(results, all_portfolios):
             
             if len(portfolio['components']) == 1:
                 reasons.append("✅ **Semplicità massima** - Un solo ETF, gestione minima")
+            elif len(portfolio['components']) <= 4:
+                reasons.append("📊 **Facile da gestire** - Numero limitato di componenti")
             
             if portfolio['esg'] == 1:
                 reasons.append("🌱 **ESG compliant** - Investe secondo criteri sostenibili")
@@ -728,9 +735,6 @@ def display_wizard_results(results, all_portfolios):
             if portfolio['risk_level'] in results['recommended_risks']:
                 risk_cat = get_risk_category(portfolio['risk_level'])
                 reasons.append(f"⚖️ **Rischio appropriato** - Livello {portfolio['risk_level']} ({risk_cat}) adatto al tuo profilo")
-            
-            if len(portfolio['components']) <= 3:
-                reasons.append("📊 **Facile da gestire** - Numero limitato di componenti")
             
             # Calcola TER medio
             if len(portfolio['components']) > 1:
@@ -850,7 +854,7 @@ def display_by_risk(portfolios, risk_filter, esg_filter, single_only):
         'Basso': [],
         'Medio': [],
         'Alto': [],
-        'Molto Alto': []  # NUOVA CATEGORIA PER RISCHIO 8
+        'Molto Alto': []
     }
     
     for portfolio in all_portfolios:
@@ -1017,13 +1021,6 @@ def display_educational_section():
         
         La maggior parte degli investitori perde denaro non a causa del mercato, ma perché 
         vende durante i ribassi trasformando perdite temporanee in perdite permanenti.
-        
-        **Nota sul Leverage (Rischio 8):**
-        
-        I portafogli con leverage amplificano i movimenti del mercato. Un ETF con leva 2x in teoria 
-        dovrebbe raddoppiare i rendimenti giornalieri, ma a causa dell'effetto "compound decay", 
-        le performance reali differiscono significativamente da quelle attese su periodi lunghi. 
-        Questo rende il leverage inadatto per strategie buy-and-hold passive.
         """)
     
     with tab3:
@@ -1053,18 +1050,6 @@ def display_educational_section():
         - "NO" → Non richiede manutenzione
         - "1y" → Ribilanciamento annuale consigliato
         - "3M" → Ribilanciamento trimestrale (solo per esperti, tipicamente per leverage)
-        
-        **5. Attenzione al Leverage (Rischio 8)**
-        
-        I portafogli con leverage sono strumenti avanzati che richiedono:
-        - Comprensione profonda dei mercati
-        - Monitoraggio costante
-        - Gestione attiva e ribilanciamento frequente
-        - Tolleranza a perdite molto elevate
-        - Esperienza con strumenti derivati
-        
-        Se non sei assolutamente certo di comprendere il leverage e l'effetto decay, 
-        rimani sui livelli di rischio 1-7.
         """)
     
     with tab4:
@@ -1091,12 +1076,9 @@ def display_educational_section():
         
         **Volatilità**: Misura delle oscillazioni di prezzo di un asset
         
-        **Leverage (Leva)**: Uso di debito o derivati per amplificare l'esposizione al mercato. 
-        Un ETF con leva 2x mira a fornire il doppio del rendimento giornaliero dell'indice sottostante.
+        **Leverage (Leva)**: Uso di debito o derivati per amplificare l'esposizione al mercato
         
-        **Decay (Decadimento)**: Effetto negativo sui rendimenti di lungo periodo degli ETF con leva 
-        dovuto alla composizione giornaliera. In mercati laterali o volatili, il valore tende a diminuire 
-        anche se l'indice sottostante rimane stabile.
+        **Decay (Decadimento)**: Effetto negativo sui rendimenti di lungo periodo degli ETF con leva
         """)
 
 
@@ -1137,10 +1119,9 @@ def display_footer():
     st.markdown("---")
     st.markdown("""
     <div style='text-align: center; color: gray;'>
-        <p><strong>Portfolio ETF Explorer</strong> | Versione 4.0 (User-Friendly Edition) | Dicembre 2024</p>
+        <p><strong>Portfolio ETF Explorer</strong> | Versione 4.1 (Wizard Fix) | Dicembre 2024</p>
         <p><small>Applicazione educativa - Non costituisce consulenza finanziaria</small></p>
-        <p><small>✨ Nuova versione 4.0: Nomi descrittivi e spiegazioni strategiche per ogni portafoglio</small></p>
-        <p><small>✅ PORT6a e PORT26 corretti a Rischio 6 (Alto) | Categoria separata "Molto Alto" per Rischio 8 (Leverage)</small></p>
+        <p><small>🔧 Fix v4.1: Wizard ora consiglia correttamente portafogli multi-ETF per utenti con esperienza "Base"</small></p>
     </div>
     """, unsafe_allow_html=True)
 
@@ -1263,7 +1244,8 @@ def main():
         - Esperienza e tolleranza
         - Preferenze ESG e gestione
         
-        ⚠️ Il rischio 8 (leverage) è escluso automaticamente per sicurezza
+        🔧 **Nuova versione 4.1:** Il wizard ora suggerisce correttamente anche portafogli multi-ETF 
+        per utenti con esperienza "Base" che sono disposti a gestire complessità moderata.
         """)
         
         portfolio_wizard(portfolios)
