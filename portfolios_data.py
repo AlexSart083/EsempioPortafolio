@@ -54,15 +54,13 @@ MULTI_PORTFOLIOS = [
         'esg': 0,
         'min_duration': '10',
         'rebalance': '1y',
-        'strategy_description': 'Portafoglio bilanciato con 40% azionario (metà standard, metà Quality factor) e 60% obbligazionario diversificato. Include oro e obbligazioni inflation-linked. Equilibrio tra crescita e stabilità per orizzonti medio-lunghi.',
+        'strategy_description': 'Portafoglio bilanciato semplificato con 40% azionario (metà standard, metà Quality factor), 10% oro e 50% obbligazionario corporate/floating rate. Combina crescita azionaria, protezione dall\'inflazione tramite oro e stabilità obbligazionaria. Ideale per orizzonti medio-lunghi con gestione semplificata.',
         'components': [
             {'percentage': '20', 'name': 'SPDR MSCI World UCITS ETF', 'isin': 'IE00BFY0GT14', 'ter': '0.12'},
             {'percentage': '20', 'name': 'Xtrackers MSCI World Quality UCITS ETF 1C', 'isin': 'IE00BL25JL35', 'ter': '0.25'},
             {'percentage': '10', 'name': 'WisdomTree Core Physical Gold', 'isin': 'JE00BN2CJ301', 'ter': '0.12'},
-            {'percentage': '10', 'name': 'iShares Euro Government Bond 3-5yr UCITS ETF', 'isin': 'IE00B1FZS681', 'ter': '0.15'},
-            {'percentage': '15', 'name': 'iShares EUR Corporate Bond 1-5yr UCITS ETF EUR (Acc)', 'isin': 'IE000F6G1DE0', 'ter': '0.20'},
-            {'percentage': '10', 'name': 'iShares Euro Inflation Linked Government Bond UCITS ETF', 'isin': 'IE00B0M62X26', 'ter': '0.09'},
-            {'percentage': '15', 'name': 'iShares EUR Floating Rate Bond Advanced UCITS ETF EUR (Acc)', 'isin': 'IE000NVM56L3', 'ter': '0.10'},
+            {'percentage': '25', 'name': 'iShares EUR Corporate Bond 1-5yr UCITS ETF EUR (Acc)', 'isin': 'IE000F6G1DE0', 'ter': '0.20'},
+            {'percentage': '25', 'name': 'iShares EUR Floating Rate Bond Advanced UCITS ETF EUR (Acc)', 'isin': 'IE000NVM56L3', 'ter': '0.10'},
         ],
         'note': ''
     },
