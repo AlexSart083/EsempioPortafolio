@@ -1,7 +1,7 @@
 """
 Database dei Portafogli ETF
 Contiene tutti i portafogli modello organizzati per categoria
-Versione 4.1 - Modifiche: PORT3, PORT5, PORT6a con oro invece di inflation-linked
+Versione 4.2 - Modifiche: PORT6a con Momentum invece di EUR Hedged
 """
 
 # ============================================================================
@@ -82,15 +82,15 @@ MULTI_PORTFOLIOS = [
     },
     {
         'id': 'PORT6a',
-        'name': 'Aggressivo Globale con Oro',
+        'name': 'Aggressivo Globale Momentum + Oro',
         'risk_level': 6,
         'esg': 0,
         'min_duration': '10',
         'rebalance': '1y',
-        'strategy_description': 'Portafoglio ad alta esposizione azionaria (80%) con diversificazione globale MSCI World, protezione valutaria parziale (10% EUR hedged) e oro (10%). Minima componente obbligazionaria (10%). Per chi cerca crescita con un pizzico di protezione.',
+        'strategy_description': 'Portafoglio ad alta esposizione azionaria (80%) con diversificazione globale MSCI World (70%), tilt Momentum (10% su titoli con forte performance recente) e oro (10%). Minima componente obbligazionaria (10%). Il fattore Momentum punta a catturare il trend di titoli con buone performance negli ultimi 6-12 mesi. Per chi cerca crescita con un approccio factor-based.',
         'components': [
             {'percentage': '70', 'name': 'SPDR MSCI World UCITS ETF', 'isin': 'IE00BFY0GT14', 'ter': '0.12'},
-            {'percentage': '10', 'name': 'Xtrackers MSCI World UCITS ETF 2C - EUR Hedged', 'isin': 'IE000ONQ3X90', 'ter': '0.17'},
+            {'percentage': '10', 'name': 'Xtrackers MSCI World Momentum UCITS ETF 1C', 'isin': 'IE00BL25JP72', 'ter': '0.25'},
             {'percentage': '10', 'name': 'WisdomTree Core Physical Gold', 'isin': 'JE00BN2CJ301', 'ter': '0.12'},
             {'percentage': '10', 'name': 'iShares EUR Corporate Bond 1-5yr UCITS ETF EUR (Acc)', 'isin': 'IE000F6G1DE0', 'ter': '0.20'},
         ],
